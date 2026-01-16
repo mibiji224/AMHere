@@ -1,0 +1,125 @@
+// 1. Setup Data Source
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+//  url = env("postgresql://neondb_owner:npg_UXlvxyTGz72q@ep-empty-field-ahh9ywiz-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require")
+}
+
+// 2. Enums (Fixed options for status)
+enum Role {
+  EMPLOYEE
+  ADMIN
+  PROJECT_MANAGER
+}
+
+enum PayrollStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+  ON_LEAVE
+}
+
+// 3. Main User Model
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  firstName     String
+  lastName      String
+  role          Role      @default(EMPLOYEE)
+  isActive      Boolean   @default(true)
+  
+  // Job Details
+  hourlyRate    Decimal   @db.Decimal(10, 2)
+  position      String
+
+  // Relations
+  credentials   UserCredential[] 
+  attendance    Attendance[]
+  logs          DailyLog[]
+  payrolls      Payroll[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// 4. WebAuthn (Biometric) Credentials
+model UserCredential {
+  id             String   @id @default(uuid())
+  user           User     @relation(fields: [userId], references: [id])
+  userId         String
+
+  credentialID   String   @unique 
+  credentialPublicKey Bytes 
+  counter        BigInt   @default(0) 
+  transports     String[] 
+
+  createdAt      DateTime @default(now())
+}
+
+// 5. Daily Attendance
+model Attendance {
+  id             String    @id @default(uuid())
+  user           User      @relation(fields: [userId], references: [id])
+  userId         String
+
+  date           DateTime  @db.Date
+  timeIn         DateTime  @default(now())
+  timeOut        DateTime? 
+  
+  // Location Security
+  ipAddress      String?
+  deviceUsed     String?   
+  latitude       Float?
+  longitude      Float?
+  
+  status         AttendanceStatus @default(PRESENT)
+  dailyLog       DailyLog?
+
+  @@unique([userId, date]) // Prevents double clock-in
+}
+
+// 6. Daily Accomplishment Report
+model DailyLog {
+  id             String     @id @default(uuid())
+  attendance     Attendance @relation(fields: [attendanceId], references: [id])
+  attendanceId   String     @unique
+  
+  user           User       @relation(fields: [userId], references: [id])
+  userId         String
+
+  prLinks        String[]   
+  ticketsDone    String     
+  blockers       String?    
+  actionItems    String?    
+  
+  createdAt      DateTime   @default(now())
+}
+
+// 7. Payroll System
+model Payroll {
+  id             String        @id @default(uuid())
+  user           User          @relation(fields: [userId], references: [id])
+  userId         String
+
+  periodStart    DateTime
+  periodEnd      DateTime
+  totalHours     Decimal       @db.Decimal(10, 2)
+  grossPay       Decimal       @db.Decimal(10, 2)
+  deductions     Decimal       @db.Decimal(10, 2) @default(0)
+  netPay         Decimal       @db.Decimal(10, 2)
+  
+  status         PayrollStatus @default(PENDING)
+  paymentDate    DateTime?
+  
+  createdAt      DateTime      @default(now())
+}
