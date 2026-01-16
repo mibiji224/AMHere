@@ -85,7 +85,6 @@ model Attendance {
   status         AttendanceStatus @default(PRESENT)
   dailyLog       DailyLog?
 
-  @@unique([userId, date]) // Prevents double clock-in
 }
 
 // 6. Daily Accomplishment Report
