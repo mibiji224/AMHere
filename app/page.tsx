@@ -34,17 +34,17 @@ export default async function Dashboard() {
     <AdminLayout>
       {/* 1. Header Stats Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-          <p className="text-sm font-medium text-gray-500 uppercase">Total Staff</p>
-          <p className="text-3xl font-bold text-slate-900 mt-2">{totalEmployees}</p>
+        <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+          <p className="text-sm font-medium text-muted-foreground uppercase">Total Staff</p>
+          <p className="text-3xl font-bold text-card-foreground mt-2">{totalEmployees}</p>
         </div>
-        <div className="bg-white p-6 rounded-xl border border-green-100 bg-green-50/50 shadow-sm">
+        <div className="bg-card p-6 rounded-xl border border-green-100 bg-green-50/50 shadow-sm">
           <p className="text-sm font-medium text-green-600 uppercase">Working Now</p>
           <p className="text-3xl font-bold text-green-700 mt-2">{activeNow}</p>
         </div>
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-          <p className="text-sm font-medium text-gray-500 uppercase">Inactive / Off</p>
-          <p className="text-3xl font-bold text-gray-400 mt-2">{inactive}</p>
+        <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+          <p className="text-sm font-medium text-muted-foreground uppercase">Inactive / Off</p>
+          <p className="text-3xl font-bold text-muted-foreground mt-2">{inactive}</p>
         </div>
       </div>
 
@@ -52,14 +52,14 @@ export default async function Dashboard() {
       <AddEmployeeForm />
 
       {/* 3. Employee Roster */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-8">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-          <h2 className="font-semibold text-gray-800">Employee Masterlist</h2>
+      <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden mt-8">
+        <div className="px-6 py-4 border-b border-border bg-muted/50 flex justify-between items-center">
+          <h2 className="font-semibold text-card-foreground">Employee Masterlist</h2>
         </div>
 
         <table className="w-full text-left">
           <thead>
-            <tr className="border-b border-gray-100 text-sm text-gray-500">
+            <tr className="border-b border-border text-sm text-muted-foreground">
               <th className="px-6 py-3 font-medium">Name</th>
               <th className="px-6 py-3 font-medium">Position</th>
               <th className="px-6 py-3 font-medium">Rate</th>
@@ -67,7 +67,7 @@ export default async function Dashboard() {
               <th className="px-6 py-3 font-medium text-right">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-border">
             {employees.map((emp) => {
               // Check if working right now
               const isWorking = emp.attendance.some(log => log.timeOut === null);

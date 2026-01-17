@@ -42,10 +42,10 @@ export default async function EmployeePortal() {
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white p-4 shadow-sm flex justify-between items-center">
+      <header className="bg-card p-4 shadow-sm flex justify-between items-center">
         <div>
-           <h1 className="font-bold text-gray-800">My Portal</h1>
-           <p className="text-xs text-gray-500">Welcome, {user.firstName}</p>
+           <h1 className="font-bold text-card-foreground">My Portal</h1>
+           <p className="text-xs text-muted-foreground">Welcome, {user.firstName}</p>
         </div>
         <form action={logout}>
            <button className="text-sm text-red-500 hover:bg-red-50 px-3 py-1 rounded">Logout</button>
