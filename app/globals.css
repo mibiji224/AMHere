@@ -1,94 +1,90 @@
 @import "tailwindcss";
 
-:root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222.2 84% 4.9%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96%;
-  --accent-foreground: 222.2 84% 4.9%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
+/* 1. Define your Theme Variables here for Tailwind to find */
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   --radius: 0.5rem;
 }
 
-.dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 217.2 91.2% 59.8%;
-  --primary-foreground: 222.2 84% 4.9%;
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 224.3 76.3% 94.1%;
-}
+/* 2. Set the actual Color Values (using standard HEX/HSL) */
+@layer base {
+  :root {
+    /* LIGHT MODE */
+    --background: #f8fafc;       /* Slate-50 */
+    --foreground: #0f172a;       /* Slate-900 */
+    --card: #ffffff;
+    --card-foreground: #0f172a;
+    --popover: #ffffff;
+    --popover-foreground: #0f172a;
+    --primary: #2563eb;          /* Blue-600 */
+    --primary-foreground: #ffffff;
+    --secondary: #f1f5f9;        /* Slate-100 */
+    --secondary-foreground: #0f172a;
+    --muted: #f1f5f9;            /* Slate-100 */
+    --muted-foreground: #64748b; /* Slate-500 */
+    --accent: #f1f5f9;
+    --accent-foreground: #0f172a;
+    --destructive: #ef4444;      /* Red-500 */
+    --destructive-foreground: #ffffff;
+    --border: #e2e8f0;           /* Slate-200 */
+    --input: #e2e8f0;
+    --ring: #2563eb;
+  }
 
-@theme inline {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  .dark {
+    /* DARK MODE */
+    --background: #020617;       /* Slate-950 */
+    --foreground: #f8fafc;       /* Slate-50 */
+    --card: #0f172a;             /* Slate-900 */
+    --card-foreground: #f8fafc;
+    --popover: #0f172a;
+    --popover-foreground: #f8fafc;
+    --primary: #3b82f6;          /* Blue-500 (Brighter for dark mode) */
+    --primary-foreground: #ffffff;
+    --secondary: #1e293b;        /* Slate-800 */
+    --secondary-foreground: #f8fafc;
+    --muted: #1e293b;            /* Slate-800 */
+    --muted-foreground: #94a3b8; /* Slate-400 */
+    --accent: #1e293b;
+    --accent-foreground: #f8fafc;
+    --destructive: #7f1d1d;      /* Red-900 */
+    --destructive-foreground: #f8fafc;
+    --border: #1e293b;           /* Slate-800 */
+    --input: #1e293b;
+    --ring: #1d4ed8;
+  }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* Base Reset */
+  * {
+    border-color: var(--border);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
 }
-
-/* ... existing styles ... */
 
 /* PRINT STYLES */
 @media print {
-  /* Hide unnecessary elements */
-  aside, header, nav, button, .print\:hidden { 
-    display: none !important; 
-  }
-
-  /* Reset layout for paper */
-  main, .max-w-5xl { 
-    margin: 0 !important; 
-    padding: 0 !important; 
-    width: 100% !important; 
-    max-width: none !important;
-  }
-
-  body { 
-    background: white !important; 
-    -webkit-print-color-adjust: exact !important; 
-    print-color-adjust: exact !important;
-  }
-
-  /* Ensure tables look good */
-  table {
-    width: 100% !important;
-    border-collapse: collapse !important;
-  }
-  
-  /* Show print-only flex items (like signatures) */
-  .print\:flex { 
-    display: flex !important; 
-  }
+  aside, header, nav, button, .print\:hidden { display: none !important; }
+  main, .max-w-5xl { margin: 0 !important; width: 100% !important; max-width: none !important; }
+  body { background: white !important; color: black !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 }
