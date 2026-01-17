@@ -20,12 +20,29 @@ enum AttendanceStatus {
   ABSENT
   LATE
   EXCUSED
+  ON_LEAVE
+}
+
+enum WorkType {
+  ONSITE
+  REMOTE
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 // Models
 model User {
   id          String   @id @default(cuid())
   email       String   @unique
+  password    String   @default("123456") // Keep for Admin
+  
+  // 👇 NEW: The 6-digit Login Code
+  employeeId  String   @unique @default("000000") 
+  
   firstName   String
   lastName    String
   position    String   @default("Employee")
@@ -36,23 +53,27 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // 👇 FIX 1: When User is deleted, delete all their Attendance records
-  attendance  Attendance[] 
+  attendance    Attendance[] 
+  schedules     Schedule[]
+  leaveRequests LeaveRequest[]
 }
 
 model Attendance {
   id          String   @id @default(cuid())
   date        DateTime @default(now())
+  
   timeIn      DateTime @default(now())
   timeOut     DateTime?
+  
+  // New Break Features
+  breakStart  DateTime?
+  breakEnd    DateTime?
+  
   status      AttendanceStatus @default(PRESENT)
   
   // Relations
   userId      String
-  // 👇 FIX 1 IMPLEMENTATION: onDelete: Cascade
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // 👇 FIX 2: When Attendance is deleted, delete connected DailyLogs
   dailyLogs   DailyLog[]
 }
 
@@ -61,8 +82,29 @@ model DailyLog {
   content      String?
   createdAt    DateTime   @default(now())
 
-  // Relations
   attendanceId String
-  // 👇 FIX 2 IMPLEMENTATION: onDelete: Cascade
   attendance   Attendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+}
+
+// New: Schedules (For Hybrid Work)
+model Schedule {
+  id          String   @id @default(cuid())
+  dayOfWeek   Int      // 0=Sunday, 1=Monday, etc.
+  workType    WorkType @default(ONSITE)
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// New: Leave Requests
+model LeaveRequest {
+  id          String      @id @default(cuid())
+  startDate   DateTime
+  endDate     DateTime
+  reason      String
+  status      LeaveStatus @default(PENDING)
+  createdAt   DateTime    @default(now())
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

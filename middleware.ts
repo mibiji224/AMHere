@@ -2,21 +2,32 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  // 1. Check if user has the cookie
-  const isAdmin = request.cookies.get('admin_session');
-  
-  // 2. Define protected routes (The Dashboard)
-  const isDashboard = request.nextUrl.pathname === '/';
+  const role = request.cookies.get('session_role')?.value;
+  const pathname = request.nextUrl.pathname;
 
-  // 3. If trying to access Dashboard WITHOUT cookie -> Redirect to Login
-  if (isDashboard && !isAdmin) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  // 1. Protect Admin Routes
+  if (pathname === '/' || pathname.startsWith('/admin')) {
+    if (role !== 'ADMIN') {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+  }
+
+  // 2. Protect Employee Routes
+  if (pathname.startsWith('/portal')) {
+    if (role !== 'EMPLOYEE') {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+  }
+
+  // 3. Redirect Logged-in Users away from Login Page
+  if (pathname === '/login') {
+    if (role === 'ADMIN') return NextResponse.redirect(new URL('/', request.url));
+    if (role === 'EMPLOYEE') return NextResponse.redirect(new URL('/portal', request.url));
   }
 
   return NextResponse.next();
 }
 
-// Only run this check on the homepage
 export const config = {
-  matcher: ['/'],
+  matcher: ['/', '/admin/:path*', '/portal/:path*', '/login'],
 };

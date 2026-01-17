@@ -24,3 +24,38 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ... existing styles ... */
+
+/* PRINT STYLES */
+@media print {
+  /* Hide unnecessary elements */
+  aside, header, nav, button, .print\:hidden { 
+    display: none !important; 
+  }
+
+  /* Reset layout for paper */
+  main, .max-w-5xl { 
+    margin: 0 !important; 
+    padding: 0 !important; 
+    width: 100% !important; 
+    max-width: none !important;
+  }
+
+  body { 
+    background: white !important; 
+    -webkit-print-color-adjust: exact !important; 
+    print-color-adjust: exact !important;
+  }
+
+  /* Ensure tables look good */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  
+  /* Show print-only flex items (like signatures) */
+  .print\:flex { 
+    display: flex !important; 
+  }
+}
