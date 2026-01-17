@@ -20,7 +20,7 @@ export default async function Dashboard() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="text-gray-500">Welcome back, Desiree (CTO)</p>
+            <p className="text-gray-500">Welcome back, Desiree</p>
           </div>
           
           <div className="flex gap-3">
@@ -29,7 +29,7 @@ export default async function Dashboard() {
               className="bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 transition shadow-sm flex items-center gap-2"
               target="_blank"
             >
-              Launch Kiosk ↗
+              Attendance ↗
             </Link>
 <form action={logout}>
   <button className="bg-white text-red-600 px-4 py-2 rounded-lg shadow-sm border border-red-100 hover:bg-red-50 transition font-medium">
