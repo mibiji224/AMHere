@@ -1,6 +1,5 @@
 'use server'
 
-// ✅ IMPORTS ARE AT THE TOP (This fixes your error)
 import { prisma } from './lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { Role, AttendanceStatus } from '@prisma/client';
@@ -33,11 +32,10 @@ export async function createEmployee(formData: FormData) {
 // 2. Function to Clock In / Clock Out
 // ---------------------------------------------------------
 export async function toggleAttendance(userId: string) {
-  // Check if the user has an open session (Clocked In but not Out)
   const activeLog = await prisma.attendance.findFirst({
     where: {
       userId: userId,
-      timeOut: null, // Still open
+      timeOut: null,
     },
   });
 
@@ -47,7 +45,7 @@ export async function toggleAttendance(userId: string) {
       where: { id: activeLog.id },
       data: {
         timeOut: new Date(),
-        status: AttendanceStatus.PRESENT, // Mark as done
+        status: AttendanceStatus.PRESENT,
       },
     });
   } else {
@@ -55,14 +53,47 @@ export async function toggleAttendance(userId: string) {
     await prisma.attendance.create({
       data: {
         userId: userId,
-        date: new Date(), // Today's date
-        timeIn: new Date(), // Right now
+        date: new Date(),
+        timeIn: new Date(),
         status: AttendanceStatus.PRESENT,
       },
     });
   }
 
-  // Refresh both the dashboard and the attendance page
   revalidatePath('/');
   revalidatePath('/attendance');
+}
+
+// 3. Function to Delete an Employee (Bulletproof Version)
+export async function deleteEmployee(userId: string) {
+
+  // A. Find all attendance records for this user first
+  const userAttendance = await prisma.attendance.findMany({
+    where: { userId: userId },
+    select: { id: true } // We only need the IDs
+  });
+
+  // Extract the list of IDs (e.g. ['id1', 'id2'])
+  const attendanceIds = userAttendance.map(record => record.id);
+
+  // B. Delete all DailyLogs connected to those attendance records
+  if (attendanceIds.length > 0) {
+    await prisma.dailyLog.deleteMany({
+      where: {
+        attendanceId: { in: attendanceIds }
+      }
+    });
+
+    // C. Now that Logs are gone, delete the Attendance records
+    await prisma.attendance.deleteMany({
+      where: { userId: userId }
+    });
+  }
+
+  // D. Finally, delete the User (now safe!)
+  await prisma.user.delete({
+    where: { id: userId },
+  });
+
+  revalidatePath('/');
 }
