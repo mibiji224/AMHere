@@ -34,26 +34,38 @@ enum LeaveStatus {
   REJECTED
 }
 
+// 👇 NEW ENUM
+enum LeaveType {
+  PAID
+  UNPAID
+}
+
 // Models
 model User {
-  id          String   @id @default(cuid())
-  email       String   @unique
-  password    String   @default("123456")
-  employeeId  String   @unique @default("000000") 
+  id            String   @id @default(cuid())
+  email         String   @unique
+  password      String   @default("123456")
+  employeeId    String   @unique @default("000000") 
   
-  firstName   String
-  lastName    String
-  position    String   @default("Employee")
-  hourlyRate  Decimal  @default(0.00)
-  role        Role     @default(EMPLOYEE)
-  isActive    Boolean  @default(true)
+  firstName     String
+  lastName      String
+  position      String   @default("Employee")
+  hourlyRate    Decimal  @default(0.00)
   
+  // ✅ Fixed: Only one 'role' definition here
+  role          Role     @default(EMPLOYEE)
+  
+  isActive      Boolean  @default(true)
+  
+  // 👇 NEW: Track Paid Leave Credits
+  leaveCredits  Int      @default(0)
+
   // 👇 NEW BIO DATA
-  birthday    DateTime?
-  photoUrl    String?   // We will store a URL or placeholder here
+  birthday      DateTime?
+  photoUrl      String?   
   
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   attendance    Attendance[] 
   schedules     Schedule[]
@@ -62,68 +74,65 @@ model User {
 }
 
 model Attendance {
-  id          String   @id @default(cuid())
-  date        DateTime @default(now())
+  id            String   @id @default(cuid())
+  date          DateTime @default(now())
   
-  timeIn      DateTime @default(now())
-  timeOut     DateTime?
+  timeIn        DateTime @default(now())
+  timeOut       DateTime?
   
-  // New Break Features
-  breakStart  DateTime?
-  breakEnd    DateTime?
+  breakStart    DateTime?
+  breakEnd      DateTime?
   
-  status      AttendanceStatus @default(PRESENT)
+  status        AttendanceStatus @default(PRESENT)
   
-  // Relations
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  dailyLogs   DailyLog[]
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dailyLogs     DailyLog[]
 }
 
 model DailyLog {
-  id           String     @id @default(cuid())
-  content      String?
-  createdAt    DateTime   @default(now())
+  id            String      @id @default(cuid())
+  content       String?
+  createdAt     DateTime    @default(now())
 
-  attendanceId String
-  attendance   Attendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  attendanceId  String
+  attendance    Attendance  @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
 }
 
-// New: Schedules (For Hybrid Work)
 model Schedule {
-  id          String   @id @default(cuid())
-  dayOfWeek   Int      // 0=Sunday, 1=Monday, etc.
-  workType    WorkType @default(ONSITE)
+  id            String   @id @default(cuid())
+  dayOfWeek     Int      // 0=Sunday, 1=Monday, etc.
+  workType      WorkType @default(ONSITE)
   
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// New: Leave Requests
 model LeaveRequest {
-  id          String      @id @default(cuid())
-  startDate   DateTime
-  endDate     DateTime
-  reason      String
-  status      LeaveStatus @default(PENDING)
-  createdAt   DateTime    @default(now())
+  id            String      @id @default(cuid())
+  startDate     DateTime
+  endDate       DateTime
+  reason        String
+  status        LeaveStatus @default(PENDING)
+  
+  // 👇 NEW: Track if it is Paid or Unpaid
+  type          LeaveType   @default(UNPAID) 
 
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+  
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
-
-
 
 model ScheduleChangeRequest {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
   
-  reason    String   
-  // 👇 NEW: Store the requested schedule (e.g. JSON of days)
+  reason           String   
   proposedSchedule Json?  
 
-  status    String   @default("PENDING") 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status           String   @default("PENDING") 
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }

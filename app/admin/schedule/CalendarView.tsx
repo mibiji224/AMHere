@@ -56,7 +56,7 @@ export default function CalendarView({ employees }: { employees: Employee[] }) {
           <div className="bg-blue-100/50 dark:bg-blue-900/40 px-6 py-4 border-b border-blue-200 dark:border-blue-800 flex justify-between items-center">
             {/* FIX: Added dark:text-blue-100 */}
             <h3 className="font-bold text-blue-900 dark:text-blue-100 flex items-center gap-2">
-              🏢 Onsite Staff
+              Onsite Staff
             </h3>
             <span className="bg-blue-200 text-blue-800 dark:bg-blue-800 dark:text-blue-200 text-xs font-bold px-2 py-1 rounded-full">
               {onsiteStaff.length}
@@ -91,7 +91,7 @@ export default function CalendarView({ employees }: { employees: Employee[] }) {
           <div className="bg-purple-100/50 dark:bg-purple-900/40 px-6 py-4 border-b border-purple-200 dark:border-purple-800 flex justify-between items-center">
             {/* FIX: Added dark:text-purple-100 */}
             <h3 className="font-bold text-purple-900 dark:text-purple-100 flex items-center gap-2">
-              🏠 Remote Staff
+              Remote Staff
             </h3>
             <span className="bg-purple-200 text-purple-800 dark:bg-purple-800 dark:text-purple-200 text-xs font-bold px-2 py-1 rounded-full">
               {remoteStaff.length}

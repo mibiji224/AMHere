@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "./components/ThemeProvider"; // 👈 IMPORT THIS
+import { ThemeProvider } from "./components/ThemeProvider"; // Ensure this path is correct
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "AM-HERE",
-  description: "Employee Management System",
+  title: "Employee Portal",
+  description: "Internal System",
 };
 
 export default function RootLayout({
@@ -14,9 +17,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>
-        {/* 👇 WRAP CHILDREN HERE */}
-        <ThemeProvider>
+      <body className={inter.className}>
+        {/* 👇 The provider must be here for the toggle to work on the login page */}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
           {children}
         </ThemeProvider>
       </body>

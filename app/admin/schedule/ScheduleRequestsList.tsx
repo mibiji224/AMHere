@@ -11,14 +11,16 @@ type ScheduleRequest = {
   };
   reason: string;
   createdAt: Date;
-  proposedSchedule: any; // This holds the JSON of the new shifts
+  proposedSchedule: any; 
 };
 
 export default function ScheduleRequestsList({ requests }: { requests: ScheduleRequest[] }) {
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <div className="space-y-4">
+    // 👇 1. MARGIN FIX: Adds space below the list
+    <div className="space-y-4 mb-10">
+      
       {/* HEADER */}
       <div className="flex items-center gap-2 mb-4">
         <h3 className="font-bold text-lg text-foreground">Schedule Change Requests</h3>
@@ -32,14 +34,13 @@ export default function ScheduleRequestsList({ requests }: { requests: ScheduleR
       {/* REQUEST CARDS */}
       {requests.length > 0 ? (
         requests.map((req) => {
-          // 1. Parse the Proposed Schedule (it comes as JSON)
-          // We default to an empty array if something is wrong
+          // Parse the Proposed Schedule (it comes as JSON)
           const newSchedule = Array.isArray(req.proposedSchedule) 
             ? req.proposedSchedule 
             : [];
 
           return (
-            <div key={req.id} className="bg-card border border-border rounded-xl p-5 shadow-sm space-y-4">
+            <div key={req.id} className="bg-card border border-border rounded-xl p-5 shadow-sm space-y-4 transition-all hover:shadow-md">
               
               {/* TOP ROW: User Info & Date */}
               <div className="flex justify-between items-start">
@@ -59,14 +60,13 @@ export default function ScheduleRequestsList({ requests }: { requests: ScheduleR
                 "{req.reason}"
               </div>
 
-              {/* 👇 NEW FEATURE: PROPOSED SCHEDULE PREVIEW */}
+              {/* PROPOSED SCHEDULE PREVIEW */}
               <div>
                 <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2">Requested Schedule:</p>
                 <div className="grid grid-cols-7 gap-1">
                   {days.map((day, idx) => {
-                    // Find the shift for this specific day (0=Sun, 1=Mon...)
                     const shift = newSchedule.find((s: any) => s.dayOfWeek === idx);
-                    const type = shift?.workType || 'REST'; // Default to REST if missing
+                    const type = shift?.workType || 'REST'; 
 
                     return (
                       <div key={day} className="flex flex-col items-center gap-1">
@@ -77,7 +77,8 @@ export default function ScheduleRequestsList({ requests }: { requests: ScheduleR
                           ${type === 'REMOTE' ? 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800' : ''}
                           ${type === 'REST' ? 'bg-secondary text-muted-foreground border-transparent opacity-50' : ''}
                         `}>
-                          {type === 'REST' ? '-' : type.slice(0, 3)}
+                          {/* 👇 2. FULL WORD FIX: Removed .slice(0,3) */}
+                          {type === 'REST' ? '-' : type}
                         </div>
                       </div>
                     );
@@ -104,7 +105,8 @@ export default function ScheduleRequestsList({ requests }: { requests: ScheduleR
           );
         })
       ) : (
-        <div className="p-8 text-center border border-dashed border-border rounded-xl">
+        // EMPTY STATE
+        <div className="p-8 text-center border border-dashed border-border rounded-xl bg-secondary/10">
           <p className="text-sm text-muted-foreground">No pending schedule requests.</p>
         </div>
       )}

@@ -5,8 +5,8 @@ export function middleware(request: NextRequest) {
   const role = request.cookies.get('session_role')?.value;
   const pathname = request.nextUrl.pathname;
 
-  // 1. Protect Admin Routes
-  if (pathname === '/' || pathname.startsWith('/admin')) {
+  // 1. Protect Admin Routes (except login page)
+  if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
     if (role !== 'ADMIN') {
       return NextResponse.redirect(new URL('/login', request.url));
     }

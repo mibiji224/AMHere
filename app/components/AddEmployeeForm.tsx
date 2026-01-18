@@ -1,8 +1,8 @@
 'use client'
 
 import { useRef } from 'react';
-// 👇 FIX: Import 'createEmployee' (not addEmployee)
-import { createEmployee } from '../actions';
+// 👇 FIX: Import 'registerEmployee' (not createEmployee)
+import { registerEmployee } from '../actions';
 
 export default function AddEmployeeForm() {
   const ref = useRef<HTMLFormElement>(null);
@@ -15,7 +15,7 @@ export default function AddEmployeeForm() {
         ref={ref} 
         action={async (formData) => {
           // 👇 FIX: Use the correct function name here too
-          await createEmployee(formData);
+          await registerEmployee(formData);
           ref.current?.reset();
         }}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end"

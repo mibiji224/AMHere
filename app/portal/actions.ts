@@ -4,18 +4,13 @@ import { prisma } from '@/app/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
 // ---------------------------------------------------------
-// 1. SUBMIT SCHEDULE CHANGE (Dynamic Fix)
+// 1. SUBMIT SCHEDULE CHANGE
 // ---------------------------------------------------------
 export async function submitScheduleChange(formData: FormData) {
-  // 👇 FIX: Get the email dynamically from the form (Hidden Input)
   const userEmail = formData.get('userEmail') as string;
 
-  if (!userEmail) {
-    console.error("No user email provided in form");
-    return;
-  }
+  if (!userEmail) return;
 
-  // Find the user who is actually logged in
   const user = await prisma.user.findUnique({
     where: { email: userEmail } 
   });
@@ -36,7 +31,6 @@ export async function submitScheduleChange(formData: FormData) {
     }
   }
 
-  // Create Request
   await prisma.scheduleChangeRequest.create({
     data: {
       userId: user.id,
@@ -50,10 +44,9 @@ export async function submitScheduleChange(formData: FormData) {
 }
 
 // ---------------------------------------------------------
-// 2. LEAVE REQUEST (Also needs the fix!)
+// 2. SUBMIT LEAVE REQUEST (Updated with Leave Type)
 // ---------------------------------------------------------
 export async function submitLeaveRequest(formData: FormData) {
-  // 👇 FIX: Get email dynamically
   const userEmail = formData.get('userEmail') as string;
 
   const user = await prisma.user.findUnique({
@@ -65,6 +58,12 @@ export async function submitLeaveRequest(formData: FormData) {
   const startDate = new Date(formData.get('startDate') as string);
   const endDate = new Date(formData.get('endDate') as string);
   const reason = formData.get('reason') as string;
+  
+  // 👇 NEW: Capture the Leave Type
+  const type = formData.get('type') as 'PAID' | 'UNPAID';
+
+  // Basic Validation
+  if (startDate > endDate) return;
 
   await prisma.leaveRequest.create({
     data: {
@@ -72,6 +71,7 @@ export async function submitLeaveRequest(formData: FormData) {
       startDate,
       endDate,
       reason,
+      type: type || 'UNPAID', // Default to UNPAID if missing
       status: 'PENDING'
     }
   });

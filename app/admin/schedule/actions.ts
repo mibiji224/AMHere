@@ -4,12 +4,11 @@ import { prisma } from '@/app/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
 // ---------------------------------------------------------
-// 1. BULK SAVE ACTION (For the Editor Grid)
+// 1. BULK SAVE ACTION (Weekly Schedule)
 // ---------------------------------------------------------
 export async function saveAllSchedules(formData: FormData) {
   const updates: Record<string, { dayOfWeek: number; workType: 'ONSITE' | 'REMOTE' }[]> = {};
 
-  // Parse Form Data
   for (const [key, value] of formData.entries()) {
     if (key.includes(':::')) {
       const [userId, dayIndex] = key.split(':::');
@@ -28,15 +27,12 @@ export async function saveAllSchedules(formData: FormData) {
     }
   }
 
-  // Perform Batch Updates
   const userIds = Object.keys(updates);
   
   await Promise.all(
     userIds.map(async (userId) => {
-      // A. Clear old schedule
       await prisma.schedule.deleteMany({ where: { userId } });
       
-      // B. Insert new schedule (if any)
       const newSchedules = updates[userId].map(s => ({
         userId,
         dayOfWeek: s.dayOfWeek,
@@ -53,27 +49,20 @@ export async function saveAllSchedules(formData: FormData) {
 }
 
 // ---------------------------------------------------------
-// 2. REQUEST APPROVAL ACTIONS (The Fix)
+// 2. SCHEDULE CHANGE REQUESTS
 // ---------------------------------------------------------
 export async function approveRequest(requestId: string) {
-  // 1. Fetch the Request
   const request = await prisma.scheduleChangeRequest.findUnique({ 
     where: { id: requestId } 
   });
   
   if (!request) return;
 
-  // 2. Check if there is a proposed schedule attached
   if (request.proposedSchedule && Array.isArray(request.proposedSchedule)) {
-    
     const newScheduleData = request.proposedSchedule as any[];
 
-    // A. Delete the Employee's OLD Schedule
-    await prisma.schedule.deleteMany({ 
-      where: { userId: request.userId } 
-    });
+    await prisma.schedule.deleteMany({ where: { userId: request.userId } });
     
-    // B. Insert the NEW Schedule
     if (newScheduleData.length > 0) {
        await prisma.schedule.createMany({ 
          data: newScheduleData.map((s: any) => ({
@@ -85,19 +74,56 @@ export async function approveRequest(requestId: string) {
     }
   }
 
-  // 3. Mark as Approved
   await prisma.scheduleChangeRequest.update({
     where: { id: requestId },
     data: { status: 'APPROVED' }
   });
 
-  // 4. Force Update UI
   revalidatePath('/admin/schedule'); 
   revalidatePath('/portal');
 }
 
 export async function rejectRequest(requestId: string) {
   await prisma.scheduleChangeRequest.update({
+    where: { id: requestId },
+    data: { status: 'REJECTED' }
+  });
+  revalidatePath('/admin/schedule');
+}
+
+// ---------------------------------------------------------
+// 3. LEAVE REQUESTS (New Logic)
+// ---------------------------------------------------------
+export async function approveLeaveRequest(requestId: string) {
+  const request = await prisma.leaveRequest.findUnique({
+    where: { id: requestId },
+    include: { user: true }
+  });
+
+  if (!request) return;
+
+  // Logic: If Paid Leave, Deduct 1 Credit
+  if (request.type === 'PAID') {
+    if (request.user.leaveCredits > 0) {
+      await prisma.user.update({
+        where: { id: request.userId },
+        data: { leaveCredits: { decrement: 1 } }
+      });
+    }
+    // Note: If 0 credits, we currently still approve but don't deduct negative.
+    // You can add an 'else' here to throw an error if strict enforcement is needed.
+  }
+
+  await prisma.leaveRequest.update({
+    where: { id: requestId },
+    data: { status: 'APPROVED' }
+  });
+
+  revalidatePath('/admin/schedule');
+}
+
+export async function rejectLeaveRequest(requestId: string) {
+  await prisma.leaveRequest.update({
     where: { id: requestId },
     data: { status: 'REJECTED' }
   });
