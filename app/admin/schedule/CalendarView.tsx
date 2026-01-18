@@ -51,26 +51,30 @@ export default function CalendarView({ employees }: { employees: Employee[] }) {
       <div className="grid md:grid-cols-2 gap-6">
         
         {/* ONSITE COLUMN */}
-        <div className="bg-blue-50/50 rounded-xl border border-blue-100 overflow-hidden">
-          <div className="bg-blue-100/50 px-6 py-4 border-b border-blue-200 flex justify-between items-center">
-            <h3 className="font-bold text-blue-900 flex items-center gap-2">
+        {/* FIX: Added dark:bg-blue-900/20 and dark:border-blue-800 */}
+        <div className="bg-blue-50/50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-900/50 overflow-hidden transition-colors">
+          <div className="bg-blue-100/50 dark:bg-blue-900/40 px-6 py-4 border-b border-blue-200 dark:border-blue-800 flex justify-between items-center">
+            {/* FIX: Added dark:text-blue-100 */}
+            <h3 className="font-bold text-blue-900 dark:text-blue-100 flex items-center gap-2">
               🏢 Onsite Staff
             </h3>
-            <span className="bg-blue-200 text-blue-800 text-xs font-bold px-2 py-1 rounded-full">
+            <span className="bg-blue-200 text-blue-800 dark:bg-blue-800 dark:text-blue-200 text-xs font-bold px-2 py-1 rounded-full">
               {onsiteStaff.length}
             </span>
           </div>
           <div className="p-4 space-y-2">
             {onsiteStaff.length > 0 ? (
               onsiteStaff.map(emp => (
-                <div key={emp.id} className="bg-background p-3 rounded-lg border border-blue-100 shadow-sm flex items-center justify-between">
+                <div key={emp.id} className="bg-background p-3 rounded-lg border border-blue-100 dark:border-blue-900 shadow-sm flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
                       {emp.firstName[0]}{emp.lastName[0]}
                     </div>
                     <div>
-                      <p className="font-bold text-gray-900 text-sm">{emp.firstName} {emp.lastName}</p>
-                      <p className="text-xs text-blue-600/80">{emp.position}</p>
+                      {/* FIX: Added dark:text-gray-100 */}
+                      <p className="font-bold text-gray-900 dark:text-gray-100 text-sm">{emp.firstName} {emp.lastName}</p>
+                      {/* FIX: Lighter blue text for dark mode */}
+                      <p className="text-xs text-blue-600/80 dark:text-blue-400">{emp.position}</p>
                     </div>
                   </div>
                 </div>
@@ -82,26 +86,29 @@ export default function CalendarView({ employees }: { employees: Employee[] }) {
         </div>
 
         {/* REMOTE COLUMN */}
-        <div className="bg-purple-50/50 rounded-xl border border-purple-100 overflow-hidden">
-          <div className="bg-purple-100/50 px-6 py-4 border-b border-purple-200 flex justify-between items-center">
-            <h3 className="font-bold text-purple-900 flex items-center gap-2">
+        {/* FIX: Added dark:bg-purple-900/20 and dark:border-purple-800 */}
+        <div className="bg-purple-50/50 dark:bg-purple-900/20 rounded-xl border border-purple-100 dark:border-purple-900/50 overflow-hidden transition-colors">
+          <div className="bg-purple-100/50 dark:bg-purple-900/40 px-6 py-4 border-b border-purple-200 dark:border-purple-800 flex justify-between items-center">
+            {/* FIX: Added dark:text-purple-100 */}
+            <h3 className="font-bold text-purple-900 dark:text-purple-100 flex items-center gap-2">
               🏠 Remote Staff
             </h3>
-            <span className="bg-purple-200 text-purple-800 text-xs font-bold px-2 py-1 rounded-full">
+            <span className="bg-purple-200 text-purple-800 dark:bg-purple-800 dark:text-purple-200 text-xs font-bold px-2 py-1 rounded-full">
               {remoteStaff.length}
             </span>
           </div>
           <div className="p-4 space-y-2">
             {remoteStaff.length > 0 ? (
               remoteStaff.map(emp => (
-                <div key={emp.id} className="bg-background p-3 rounded-lg border border-purple-100 shadow-sm flex items-center justify-between">
+                <div key={emp.id} className="bg-background p-3 rounded-lg border border-purple-100 dark:border-purple-900 shadow-sm flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center text-xs font-bold">
                       {emp.firstName[0]}{emp.lastName[0]}
                     </div>
                     <div>
-                      <p className="font-bold text-gray-900 text-sm">{emp.firstName} {emp.lastName}</p>
-                      <p className="text-xs text-purple-600/80">{emp.position}</p>
+                      {/* FIX: Added dark:text-gray-100 */}
+                      <p className="font-bold text-gray-900 dark:text-gray-100 text-sm">{emp.firstName} {emp.lastName}</p>
+                      <p className="text-xs text-purple-600/80 dark:text-purple-400">{emp.position}</p>
                     </div>
                   </div>
                 </div>

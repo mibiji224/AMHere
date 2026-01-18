@@ -27,3 +27,21 @@ export async function saveSchedule(userId: string, formData: FormData) {
 
   revalidatePath('/admin/schedule');
 }
+
+// ... existing saveSchedule code ...
+
+export async function approveRequest(requestId: string) {
+  await prisma.scheduleChangeRequest.update({
+    where: { id: requestId },
+    data: { status: 'APPROVED' }
+  });
+  revalidatePath('/admin/schedule');
+}
+
+export async function rejectRequest(requestId: string) {
+  await prisma.scheduleChangeRequest.update({
+    where: { id: requestId },
+    data: { status: 'REJECTED' }
+  });
+  revalidatePath('/admin/schedule');
+}

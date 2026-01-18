@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
-export default async function Dashboard() {
+export default async function EmployeesPage() {
   // 1. Get Totals
   const totalEmployees = await prisma.user.count({ where: { role: 'EMPLOYEE' } });
   

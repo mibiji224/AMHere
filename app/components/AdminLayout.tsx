@@ -17,6 +17,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return pathname.startsWith(path);
   };
   
+  // 👇 FIX 1: Use 'primary' and 'muted-foreground' instead of hardcoded blues/grays
   const linkStyle = (path: string) => `
     flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group font-medium text-sm
     ${isActive(path) 
@@ -26,13 +27,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   `;
 
   return (
+    // 👇 FIX 2: Use 'bg-background' (from globals.css) instead of 'bg-gray-50'
     <div className="min-h-screen bg-background flex transition-colors duration-300">
       
       {/* MOBILE HEADER */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 bg-background/80 border-b z-50 flex justify-between items-center px-4 h-16 backdrop-blur-md">
+      <div className="lg:hidden fixed top-0 left-0 right-0 bg-background/80 border-b border-border z-50 flex justify-between items-center px-4 h-16 backdrop-blur-md">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-             <span className="font-bold text-white">A</span>
+             <span className="font-bold text-primary-foreground">A</span>
           </div>
           <span className="font-bold text-lg text-foreground">AM-HERE</span>
         </div>
@@ -42,15 +44,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
 
       {/* SIDEBAR */}
+      {/* 👇 FIX 3: Use 'bg-card' so it is White in Day Mode and Dark in Night Mode */}
       <aside className={`
-        fixed top-0 left-0 bottom-0 w-72 bg-card border-r z-50 transform transition-transform duration-300 ease-in-out flex flex-col
+        fixed top-0 left-0 bottom-0 w-72 bg-card border-r border-border z-50 transform transition-transform duration-300 ease-in-out flex flex-col
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
         lg:translate-x-0 lg:static lg:flex-shrink-0
       `}>
         
-        <div className="flex p-6 items-center gap-3 border-b flex-shrink-0">
+        {/* Sidebar Header */}
+        <div className="flex p-6 items-center gap-3 border-b border-border flex-shrink-0">
           <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            <svg className="w-5 h-5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
           </div>
           <div>
             <span className="font-bold text-lg block leading-none text-foreground">AM-HERE</span>
@@ -58,6 +64,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </div>
 
+        {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
           <Link href="/" className={linkStyle('/')} onClick={() => setIsMobileMenuOpen(false)}>
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
@@ -77,10 +84,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Link>
         </nav>
 
-        <div className="p-4 border-t bg-muted/20 space-y-4">
+        {/* Footer Area */}
+        <div className="p-4 border-t border-border bg-muted/20 space-y-4">
           <div className="flex items-center justify-between px-2">
             <span className="text-sm font-medium text-muted-foreground">Dark Mode</span>
-            <button onClick={toggleTheme} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isDarkMode ? 'bg-primary' : 'bg-gray-300'}`}>
+            <button 
+              onClick={toggleTheme} 
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isDarkMode ? 'bg-primary' : 'bg-input'}`}
+            >
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isDarkMode ? 'translate-x-6' : 'translate-x-1'}`}/>
             </button>
           </div>
@@ -93,7 +104,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      <main className="flex-1 w-full min-w-0 pt-16 lg:pt-0 overflow-y-auto h-screen">
+      <main className="flex-1 w-full min-w-0 pt-16 lg:pt-0 overflow-y-auto h-screen bg-background text-foreground">
         <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
           {children}
         </div>

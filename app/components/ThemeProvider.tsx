@@ -11,39 +11,58 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('dark')
+// 👇 ADD 'storageKey' to the props
+export function ThemeProvider({ 
+  children, 
+  storageKey = 'theme' // Default key if none provided
+}: { 
+  children: ReactNode, 
+  storageKey?: string 
+}) {
+  const [theme, setTheme] = useState<Theme>('light')
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    // Load theme from localStorage
-    const savedTheme = localStorage.getItem('theme') as Theme
-    if (savedTheme) {
-      setTheme(savedTheme)
-    } else {
-      // Default to system preference
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-      setTheme(systemTheme)
-    }
-  }, [])
+    const root = window.document.documentElement
+    
+    // 1. Load from the SPECIFIC storage key
+    const savedTheme = (localStorage.getItem(storageKey) as Theme) || 'light'
+    setTheme(savedTheme)
+    setMounted(true)
 
-  useEffect(() => {
-    // Apply theme to document
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark')
+    // 2. Apply the theme
+    if (savedTheme === 'dark') {
+      root.classList.add('dark')
+      root.style.colorScheme = 'dark'
     } else {
-      document.documentElement.classList.remove('dark')
+      root.classList.remove('dark')
+      root.style.colorScheme = 'light'
     }
-    // Save to localStorage
-    localStorage.setItem('theme', theme)
-  }, [theme])
+  }, [storageKey]) // Re-run if key changes
 
   const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark')
+    const root = window.document.documentElement
+    const newTheme = theme === 'dark' ? 'light' : 'dark'
+    
+    setTheme(newTheme)
+    
+    if (newTheme === 'dark') {
+      root.classList.add('dark')
+      root.style.colorScheme = 'dark'
+    } else {
+      root.classList.remove('dark')
+      root.style.colorScheme = 'light'
+    }
+    
+    // 3. Save to the SPECIFIC storage key
+    localStorage.setItem(storageKey, newTheme)
   }
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {children}
+      <div style={{ visibility: mounted ? 'visible' : 'hidden' }}>
+        {children}
+      </div>
     </ThemeContext.Provider>
   )
 }
