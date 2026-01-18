@@ -2,61 +2,112 @@
 
 import { approveRequest, rejectRequest } from './actions';
 
-type Request = {
+type ScheduleRequest = {
   id: string;
-  user: { firstName: string; lastName: string; position: string };
+  user: {
+    firstName: string;
+    lastName: string;
+    position: string;
+  };
   reason: string;
   createdAt: Date;
+  proposedSchedule: any; // This holds the JSON of the new shifts
 };
 
-export default function ScheduleRequestsList({ requests }: { requests: Request[] }) {
-  if (requests.length === 0) return null; // Don't show anything if no requests
+export default function ScheduleRequestsList({ requests }: { requests: ScheduleRequest[] }) {
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <div className="mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
-      <h2 className="font-bold text-lg mb-4 flex items-center gap-2 text-foreground">
-        🔔 Schedule Change Requests
-        <span className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-xs px-2 py-0.5 rounded-full border border-orange-200 dark:border-orange-800">
-          {requests.length}
-        </span>
-      </h2>
+    <div className="space-y-4">
+      {/* HEADER */}
+      <div className="flex items-center gap-2 mb-4">
+        <h3 className="font-bold text-lg text-foreground">Schedule Change Requests</h3>
+        {requests.length > 0 && (
+          <span className="bg-orange-100 text-orange-700 text-xs font-bold px-2 py-1 rounded-full">
+            {requests.length} Pending
+          </span>
+        )}
+      </div>
 
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-        {requests.map((req) => (
-          <div key={req.id} className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col justify-between gap-3">
-            
-            <div>
+      {/* REQUEST CARDS */}
+      {requests.length > 0 ? (
+        requests.map((req) => {
+          // 1. Parse the Proposed Schedule (it comes as JSON)
+          // We default to an empty array if something is wrong
+          const newSchedule = Array.isArray(req.proposedSchedule) 
+            ? req.proposedSchedule 
+            : [];
+
+          return (
+            <div key={req.id} className="bg-card border border-border rounded-xl p-5 shadow-sm space-y-4">
+              
+              {/* TOP ROW: User Info & Date */}
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-bold text-foreground text-sm">{req.user.firstName} {req.user.lastName}</h3>
+                  <h4 className="font-bold text-foreground text-base">
+                    {req.user.firstName} {req.user.lastName}
+                  </h4>
                   <p className="text-xs text-muted-foreground">{req.user.position}</p>
                 </div>
-                <span className="text-[10px] text-muted-foreground bg-secondary px-2 py-1 rounded">
+                <div className="text-[10px] font-bold bg-secondary text-muted-foreground px-2 py-1 rounded">
                   {new Date(req.createdAt).toLocaleDateString()}
-                </span>
+                </div>
               </div>
-              
-              <div className="mt-3 bg-secondary/50 p-2 rounded-lg text-sm text-foreground italic border border-border/50">
+
+              {/* REASON BOX */}
+              <div className="bg-secondary/30 p-3 rounded-lg text-sm text-foreground italic border border-border/50">
                 "{req.reason}"
               </div>
-            </div>
 
-            <div className="flex gap-2 mt-2">
-              <form action={approveRequest.bind(null, req.id)} className="flex-1">
-                <button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-1.5 rounded-lg text-xs font-bold transition">
-                  ✔ Acknowledge
-                </button>
-              </form>
-              <form action={rejectRequest.bind(null, req.id)} className="flex-1">
-                <button className="w-full bg-secondary hover:bg-destructive/10 text-muted-foreground hover:text-destructive py-1.5 rounded-lg text-xs font-bold transition border border-border">
-                  ✕ Reject
-                </button>
-              </form>
-            </div>
+              {/* 👇 NEW FEATURE: PROPOSED SCHEDULE PREVIEW */}
+              <div>
+                <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2">Requested Schedule:</p>
+                <div className="grid grid-cols-7 gap-1">
+                  {days.map((day, idx) => {
+                    // Find the shift for this specific day (0=Sun, 1=Mon...)
+                    const shift = newSchedule.find((s: any) => s.dayOfWeek === idx);
+                    const type = shift?.workType || 'REST'; // Default to REST if missing
 
-          </div>
-        ))}
-      </div>
+                    return (
+                      <div key={day} className="flex flex-col items-center gap-1">
+                        <span className="text-[9px] font-bold text-muted-foreground uppercase">{day}</span>
+                        <div className={`
+                          w-full h-8 rounded flex items-center justify-center text-[9px] font-bold border transition-colors
+                          ${type === 'ONSITE' ? 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800' : ''}
+                          ${type === 'REMOTE' ? 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800' : ''}
+                          ${type === 'REST' ? 'bg-secondary text-muted-foreground border-transparent opacity-50' : ''}
+                        `}>
+                          {type === 'REST' ? '-' : type.slice(0, 3)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* ACTION BUTTONS */}
+              <div className="flex gap-2 pt-2">
+                <form action={async () => await approveRequest(req.id)} className="flex-1">
+                  <button className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 rounded-lg shadow-sm transition">
+                    ✓ Approve Change
+                  </button>
+                </form>
+                
+                <form action={async () => await rejectRequest(req.id)} className="flex-1">
+                  <button className="w-full bg-secondary hover:bg-red-50 hover:text-red-600 hover:border-red-200 border border-transparent text-muted-foreground text-xs font-bold py-2.5 rounded-lg transition">
+                    ✕ Reject
+                  </button>
+                </form>
+              </div>
+
+            </div>
+          );
+        })
+      ) : (
+        <div className="p-8 text-center border border-dashed border-border rounded-xl">
+          <p className="text-sm text-muted-foreground">No pending schedule requests.</p>
+        </div>
+      )}
     </div>
   );
 }

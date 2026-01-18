@@ -1,95 +1,126 @@
 'use client'
 
 import { useState } from 'react';
-import { saveSchedule } from './actions';
+import { saveAllSchedules } from './actions'; 
 
-type ScheduleProps = {
-  employee: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    schedules: { dayOfWeek: number; workType: string }[];
-  };
+type Employee = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  position: string;
+  schedules: { dayOfWeek: number; workType: string }[];
 };
 
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-export default function ScheduleEditor({ employee }: ScheduleProps) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const getDayStatus = (dayIndex: number) => {
-    const found = employee.schedules.find(s => s.dayOfWeek === dayIndex);
-    return found ? found.workType : 'REST';
-  };
+export default function ScheduleEditor({ employees }: { employees: Employee[] }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <>
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="text-primary bg-primary/10 px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/20 transition"
-      >
-        {isOpen ? 'Close' : 'Manage Schedule'}
-      </button>
+    <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+      
+      {/* 1. WRAP EVERYTHING IN ONE FORM */}
+      <form action={async (formData) => {
+        await saveAllSchedules(formData);
+        setIsEditing(false); // Turn off edit mode after saving
+      }}>
 
-      {isOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm p-4">
-          {/* 👇 FIX: Use 'bg-card' (White in Day, Dark in Night) */}
-          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-border">
-            
-            {/* 👇 FIX: Use 'bg-primary' (Blue) instead of 'bg-slate-900' (Black) */}
-            <div className="bg-primary p-6 flex justify-between items-center">
-              <h3 className="text-primary-foreground font-bold text-lg">
-                Schedule for {employee.firstName}
-              </h3>
-              <button onClick={() => setIsOpen(false)} className="text-primary-foreground/70 hover:text-primary-foreground transition">✕</button>
-            </div>
-
-            <form action={async (formData) => {
-                await saveSchedule(employee.id, formData);
-                setIsOpen(false);
-            }} className="p-6 space-y-4">
-              
-              <div className="grid gap-3">
-                {[1, 2, 3, 4, 5, 6, 0].map((dayIndex) => (
-                  <div key={dayIndex} className="flex items-center justify-between border-b border-border pb-2 last:border-0">
-                    <label className="font-medium text-foreground w-24">
-                      {DAYS[dayIndex]}
-                    </label>
-                    
-                    {/* 👇 FIX: Use 'bg-background' and 'text-foreground' for inputs */}
-                    <select 
-                      name={`day-${dayIndex}`} 
-                      defaultValue={getDayStatus(dayIndex)}
-                      className="bg-background border border-input text-foreground rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none w-40"
-                    >
-                      <option value="REST">Rest Day</option>
-                      <option value="ONSITE">Onsite</option>
-                      <option value="REMOTE">Remote</option>
-                    </select>
-                  </div>
-                ))}
-              </div>
-
-              <div className="pt-4 flex justify-end gap-3">
+        {/* TOOLBAR */}
+        <div className="p-4 border-b border-border flex justify-between items-center bg-secondary/30">
+          <h2 className="font-bold text-foreground">Weekly Schedule Editor</h2>
+          
+          <div className="flex gap-2">
+            {isEditing ? (
+              <>
                 <button 
                   type="button" 
-                  onClick={() => setIsOpen(false)}
-                  className="px-4 py-2 text-muted-foreground hover:bg-secondary rounded-lg transition"
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2 rounded-lg text-xs font-bold border border-border bg-background hover:bg-secondary transition"
                 >
                   Cancel
                 </button>
+                {/* 👇 SAVE BUTTON NOW AT THE TOP */}
                 <button 
                   type="submit"
-                  className="px-6 py-2 bg-primary text-primary-foreground font-bold rounded-lg hover:bg-primary/90 shadow-md transition"
+                  className="px-4 py-2 rounded-lg text-xs font-bold bg-green-600 hover:bg-green-700 text-white transition shadow-sm"
                 >
-                  Save Schedule
+                  💾 Save Changes
                 </button>
-              </div>
-
-            </form>
+              </>
+            ) : (
+              <button 
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="px-4 py-2 rounded-lg text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 transition"
+              >
+                ✎ Edit Schedules
+              </button>
+            )}
           </div>
         </div>
-      )}
-    </>
+
+        {/* TABLE HEADER */}
+        <div className="grid grid-cols-[250px_1fr] gap-4 px-6 py-3 border-b border-border bg-secondary/50 text-[10px] font-bold uppercase text-muted-foreground tracking-wider">
+          <div>Employee</div>
+          <div className="grid grid-cols-7 gap-2 text-center">
+            {days.map(d => <span key={d}>{d}</span>)}
+          </div>
+        </div>
+
+        {/* SCHEDULE ROWS */}
+        <div className="divide-y divide-border">
+          {employees.map((emp) => (
+            <div key={emp.id} className="grid grid-cols-[250px_1fr] gap-4 px-6 py-4 hover:bg-secondary/20 transition-colors items-center">
+              
+              {/* NAME COLUMN */}
+              <div className="pr-4 truncate">
+                <div className="font-bold text-foreground truncate">{emp.firstName} {emp.lastName}</div>
+                <div className="text-xs text-muted-foreground truncate">{emp.position}</div>
+              </div>
+
+              {/* WEEKLY GRID */}
+              <div className="grid grid-cols-7 gap-2">
+                {days.map((_, dayIndex) => {
+                  const currentSchedule = emp.schedules.find(s => s.dayOfWeek === dayIndex);
+                  const type = currentSchedule?.workType || 'REST';
+
+                  return (
+                    <div key={dayIndex} className="flex flex-col">
+                      {isEditing ? (
+                        // EDIT MODE: Selects with unique names per user/day
+                        <select 
+                          name={`${emp.id}:::${dayIndex}`} 
+                          defaultValue={type}
+                          className={`
+                            w-full text-[10px] p-1 rounded border outline-none focus:ring-2 focus:ring-primary font-medium
+                            ${type === 'ONSITE' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800' : ''}
+                            ${type === 'REMOTE' ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800' : ''}
+                            ${type === 'REST' ? 'bg-secondary text-muted-foreground border-border' : ''}
+                          `}
+                        >
+                          <option value="REST">-</option>
+                          <option value="ONSITE">Onsite</option>
+                          <option value="REMOTE">Remote</option>
+                        </select>
+                      ) : (
+                        // VIEW MODE: Colored Badges
+                        <div className={`
+                          h-9 rounded-md flex items-center justify-center text-[10px] font-bold border
+                          ${type === 'ONSITE' ? 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800' : ''}
+                          ${type === 'REMOTE' ? 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800' : ''}
+                          ${type === 'REST' ? 'bg-secondary/50 text-muted-foreground border-transparent opacity-40' : ''}
+                        `}>
+                          {type === 'REST' ? '—' : type.slice(0,3)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+            </div>
+          ))}
+        </div>
+      </form>
+    </div>
   );
 }

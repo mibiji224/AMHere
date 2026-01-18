@@ -1,8 +1,8 @@
 import { prisma } from '@/app/lib/prisma';
 import AdminLayout from '@/app/components/AdminLayout';
-import AddEmployeeForm from '@/app/components/AddEmployeeForm';
 import { deleteEmployee } from '@/app/actions';
 import Link from 'next/link';
+import RegisterModal from '@/app/components/RegisterModal'; // 👈 Import the new Modal
 
 export const dynamic = 'force-dynamic';
 
@@ -53,13 +53,13 @@ export default async function EmployeesPage() {
         </div>
       </div>
 
-      {/* 2. Add Employee Form */}
-      <AddEmployeeForm />
-
-      {/* 3. Employee Roster */}
+      {/* 2. Employee Roster */}
       <div className="bg-white dark:bg-card rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden mt-8 transition-colors">
+        {/* TABLE HEADER with REGISTER BUTTON */}
         <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 flex justify-between items-center">
           <h2 className="font-semibold text-gray-800 dark:text-white">Employee Masterlist</h2>
+          {/* 👇 The new Register Button sits here now */}
+          <RegisterModal />
         </div>
         
         <div className="overflow-x-auto">
@@ -104,7 +104,7 @@ export default async function EmployeesPage() {
                         )}
                       </td>
                       <td className="px-6 py-4 text-right flex justify-end gap-2">
-                        {/* VIEW BUTTON */}
+                        {/* VIEW BUTTON - Links to Details Page */}
                         <Link 
                           href={`/admin/employees/${emp.id}`}
                           className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 p-2 rounded transition font-medium text-sm"

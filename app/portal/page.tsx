@@ -4,9 +4,9 @@ import { redirect } from 'next/navigation';
 import { logout } from '../login/action';
 import { toggleAttendance, toggleBreak } from '../actions';
 import LeaveSection from './LeaveSection'; 
-import ScheduleRequestSection from './ScheduleRequestSection'; // 👈 New Section
+import ScheduleRequestSection from './ScheduleRequestSection'; 
 import ThemeToggle from '../components/ThemeToggle'; 
-import { ThemeProvider } from '../components/ThemeProvider'; // 👈 Wrapper for isolation
+import { ThemeProvider } from '../components/ThemeProvider'; 
 
 export const dynamic = 'force-dynamic';
 
@@ -135,10 +135,16 @@ export default async function EmployeePortal() {
 
           </div>
 
-          {/* REQUEST SECTIONS */}
-          <LeaveSection requests={user.leaveRequests} />
+          {/* REQUEST SECTIONS (With The Fix) */}
+          <LeaveSection 
+            requests={user.leaveRequests} 
+            userEmail={user.email} // 👈 Added this prop
+          />
           
-          <ScheduleRequestSection requests={user.scheduleRequests} />
+          <ScheduleRequestSection 
+            requests={user.scheduleRequests} 
+            userEmail={user.email} // 👈 Added this prop
+          />
 
         </div>
       </main>

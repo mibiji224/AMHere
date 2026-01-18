@@ -1,165 +1,107 @@
 import { prisma } from '@/app/lib/prisma';
 import AdminLayout from '@/app/components/AdminLayout';
+import { calculatePayroll } from '@/app/lib/payrollHelper';
 
 export const dynamic = 'force-dynamic';
 
 export default async function PayrollPage() {
-  // 1. Determine the Date Range (Current Month)
+  // 1. Calculate Current Week Range (Sunday to Saturday)
   const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const dayOfWeek = now.getDay(); // 0 (Sun) to 6 (Sat)
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - dayOfWeek);
+  startOfWeek.setHours(0,0,0,0);
+  
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23,59,59,999);
 
-  // 2. Fetch Employees with Attendance for this Month
+  // 2. Fetch Data
   const employees = await prisma.user.findMany({
     where: { role: 'EMPLOYEE' },
     include: {
       attendance: {
-        where: {
-          date: {
-            gte: startOfMonth,
-            lte: endOfMonth
-          }
-        }
+        where: { date: { gte: startOfWeek, lte: endOfWeek } }
       }
     },
     orderBy: { lastName: 'asc' }
   });
 
-  // 3. Calculate Payroll Data
-  let grandTotalPayroll = 0;
-  let grandTotalHours = 0;
+  // 3. Process Data
+  let companyTotalGross = 0;
+  let companyTotalNet = 0;
+  let companyTotalDeductions = 0;
 
-  const payrollData = employees.map((emp) => {
-    const hourlyRate = emp.hourlyRate.toNumber();
-    let totalHours = 0;
+  const payrollRows = employees.map(emp => {
+    const stats = calculatePayroll(emp, startOfWeek, endOfWeek);
+    
+    companyTotalGross += stats.grossPay;
+    companyTotalNet += stats.netPay;
+    companyTotalDeductions += stats.totalDeduction;
 
-    // Sum up hours for this employee
-    emp.attendance.forEach((record) => {
-      if (record.timeIn && record.timeOut) {
-        const start = new Date(record.timeIn).getTime();
-        const end = new Date(record.timeOut).getTime();
-        
-        let breakMs = 0;
-        if (record.breakStart && record.breakEnd) {
-          breakMs = new Date(record.breakEnd).getTime() - new Date(record.breakStart).getTime();
-        }
+    return { ...emp, stats };
+  }).filter(row => row.stats.logCount > 0); // Only show active employees
 
-        const hours = ((end - start) - breakMs) / (1000 * 60 * 60);
-        totalHours += hours;
-      }
-    });
-
-    const grossPay = totalHours * hourlyRate;
-
-    // Add to Grand Totals
-    grandTotalPayroll += grossPay;
-    grandTotalHours += totalHours;
-
-    return {
-      ...emp,
-      totalHours,
-      grossPay,
-      hourlyRate // pass converted number
-    };
-  });
-
-  // Format Currency Helper
-  const formatMoney = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-  };
+  // Helper
+  const formatMoney = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
   return (
     <AdminLayout>
-      
-      {/* HEADER */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground">Payroll Report</h1>
-        <p className="text-muted-foreground">
-          Summary for {startOfMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+        <h1 className="text-2xl font-bold text-foreground">Weekly Payroll Report</h1>
+        <p className="text-muted-foreground text-sm">
+          Period: {startOfWeek.toLocaleDateString()} — {endOfWeek.toLocaleDateString()}
         </p>
       </div>
 
-      {/* SUMMARY CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
-          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Payroll Cost</h3>
-          <div className="text-3xl font-bold text-green-600 dark:text-green-400">{formatMoney(grandTotalPayroll)}</div>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="bg-card p-6 rounded-xl border border-border">
+          <h3 className="text-xs font-bold text-muted-foreground uppercase">Total Employees to Pay</h3>
+          <div className="text-3xl font-bold text-foreground">{payrollRows.length}</div>
         </div>
-        <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
-          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Hours Worked</h3>
-          <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{grandTotalHours.toFixed(1)} hrs</div>
+        <div className="bg-card p-6 rounded-xl border border-border">
+          <h3 className="text-xs font-bold text-muted-foreground uppercase">Total Gross Pay</h3>
+          <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{formatMoney(companyTotalGross)}</div>
         </div>
-        <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
-          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Employees Paid</h3>
-          <div className="text-3xl font-bold text-foreground">{payrollData.length}</div>
+        <div className="bg-card p-6 rounded-xl border border-border">
+          <h3 className="text-xs font-bold text-muted-foreground uppercase">Total Net Pay</h3>
+          <div className="text-3xl font-bold text-green-600 dark:text-green-400">{formatMoney(companyTotalNet)}</div>
         </div>
       </div>
 
-      {/* PAYROLL TABLE */}
-      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-secondary/50 text-muted-foreground font-bold border-b border-border">
-              <tr>
-                <th className="px-6 py-4">Employee</th>
-                <th className="px-6 py-4">Position</th>
-                <th className="px-6 py-4 text-right">Hourly Rate</th>
-                <th className="px-6 py-4 text-right">Total Hours</th>
-                <th className="px-6 py-4 text-right">Gross Pay</th>
-                <th className="px-6 py-4 text-center">Status</th>
+      {/* Table */}
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
+        <table className="w-full text-sm text-left">
+          <thead className="bg-secondary/50 border-b border-border text-muted-foreground font-bold">
+            <tr>
+              <th className="px-6 py-4">Employee</th>
+              <th className="px-6 py-4 text-right">Gross Pay</th>
+              <th className="px-6 py-4 text-right text-red-500">Deductions</th>
+              <th className="px-6 py-4 text-right">Net Pay</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {payrollRows.map((row) => (
+              <tr key={row.id}>
+                <td className="px-6 py-4 font-bold text-foreground">
+                  {row.firstName} {row.lastName}
+                  <div className="text-[10px] text-muted-foreground font-normal">{row.position}</div>
+                </td>
+                <td className="px-6 py-4 text-right font-mono text-foreground">
+                  {formatMoney(row.stats.grossPay)}
+                </td>
+                <td className="px-6 py-4 text-right font-mono text-red-500 font-bold">
+                  {row.stats.totalDeduction > 0 ? `-${formatMoney(row.stats.totalDeduction)}` : '-'}
+                </td>
+                <td className="px-6 py-4 text-right font-mono text-green-600 dark:text-green-400 font-bold text-base">
+                  {formatMoney(row.stats.netPay)}
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {payrollData.map((emp) => (
-                <tr key={emp.id} className="hover:bg-secondary/20 transition-colors group">
-                  <td className="px-6 py-4 font-bold text-foreground">
-                    {emp.firstName} {emp.lastName}
-                    <div className="text-[10px] text-muted-foreground font-normal">{emp.employeeId}</div>
-                  </td>
-                  <td className="px-6 py-4 text-muted-foreground">
-                    {emp.position}
-                  </td>
-                  <td className="px-6 py-4 text-right font-mono text-muted-foreground">
-                    ${emp.hourlyRate.toFixed(2)}
-                  </td>
-                  <td className="px-6 py-4 text-right font-bold text-blue-600 dark:text-blue-400">
-                    {emp.totalHours.toFixed(2)}
-                  </td>
-                  <td className="px-6 py-4 text-right font-bold text-green-600 dark:text-green-400 text-base">
-                    {formatMoney(emp.grossPay)}
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="inline-block px-2 py-1 rounded text-[10px] font-bold bg-secondary text-muted-foreground border border-border">
-                      CALCULATED
-                    </span>
-                  </td>
-                </tr>
-              ))}
-
-              {payrollData.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="text-center py-12 text-muted-foreground">
-                    No records found for this month.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-            
-            {/* TABLE FOOTER TOTALS */}
-            {payrollData.length > 0 && (
-              <tfoot className="bg-secondary/30 font-bold text-foreground border-t-2 border-border">
-                <tr>
-                  <td colSpan={3} className="px-6 py-4 text-right uppercase text-xs tracking-wider">Totals</td>
-                  <td className="px-6 py-4 text-right">{grandTotalHours.toFixed(2)}</td>
-                  <td className="px-6 py-4 text-right text-green-600 dark:text-green-400">{formatMoney(grandTotalPayroll)}</td>
-                  <td></td>
-                </tr>
-              </tfoot>
-            )}
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
-
     </AdminLayout>
   );
 }

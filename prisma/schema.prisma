@@ -38,9 +38,7 @@ enum LeaveStatus {
 model User {
   id          String   @id @default(cuid())
   email       String   @unique
-  password    String   @default("123456") // Keep for Admin
-  
-  // 👇 NEW: The 6-digit Login Code
+  password    String   @default("123456")
   employeeId  String   @unique @default("000000") 
   
   firstName   String
@@ -49,6 +47,10 @@ model User {
   hourlyRate  Decimal  @default(0.00)
   role        Role     @default(EMPLOYEE)
   isActive    Boolean  @default(true)
+  
+  // 👇 NEW BIO DATA
+  birthday    DateTime?
+  photoUrl    String?   // We will store a URL or placeholder here
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -110,13 +112,18 @@ model LeaveRequest {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// 👇 PASTE THIS AT THE BOTTOM OF THE FILE
+
+
 model ScheduleChangeRequest {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id])
+  
   reason    String   
-  status    String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  // 👇 NEW: Store the requested schedule (e.g. JSON of days)
+  proposedSchedule Json?  
+
+  status    String   @default("PENDING") 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

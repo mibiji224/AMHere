@@ -11,7 +11,14 @@ type LeaveRequest = {
   status: string; // PENDING, APPROVED, REJECTED
 };
 
-export default function LeaveSection({ requests }: { requests: LeaveRequest[] }) {
+// 👇 FIX 1: Accept userEmail in props
+export default function LeaveSection({ 
+  requests, 
+  userEmail 
+}: { 
+  requests: LeaveRequest[], 
+  userEmail: string 
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -74,9 +81,11 @@ export default function LeaveSection({ requests }: { requests: LeaveRequest[] })
                 setIsOpen(false);
             }} className="p-6 space-y-4">
               
+              {/* 👇 FIX 2: Hidden Input to identify the user */}
+              <input type="hidden" name="userEmail" value={userEmail} />
+
               <div className="space-y-1">
                 <label className="text-xs font-bold text-muted-foreground uppercase">Start Date</label>
-                {/* 👇 FIX: Uses bg-background and text-foreground */}
                 <input 
                   type="date" 
                   name="startDate" 
