@@ -3,6 +3,7 @@ import { prisma } from '@/app/lib/prisma';
 import ScheduleContainer from './ScheduleContainer';
 import ScheduleRequestsList from './ScheduleRequestsList'; 
 
+
 export const dynamic = 'force-dynamic';
 
 export default async function SchedulePage() {
