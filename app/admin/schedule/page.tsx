@@ -10,7 +10,7 @@ export default async function SchedulePage() {
   // 1. Fetch Employees & Sanitize
   const rawEmployees = await prisma.user.findMany({
     where: { role: 'EMPLOYEE' },
-    include: { schedules: true },
+    include: { schedules: true, leaveRequests: true },
     orderBy: { lastName: 'asc' }
   });
 

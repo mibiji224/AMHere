@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/request';
+import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   // We use session_userid as the primary check for being "logged in"
@@ -7,36 +7,35 @@ export function middleware(request: NextRequest) {
   const role = request.cookies.get('session_role')?.value;
   const { pathname } = request.nextUrl;
 
-  // 1. If trying to access Admin pages
-  if (pathname.startsWith('/admin')) {
-    // Allow the admin login page itself
-    if (pathname === '/admin/login') return NextResponse.next();
-
-    // Block if not an Admin or not logged in
-    if (!userId || role !== 'ADMIN') {
-      return NextResponse.redirect(new URL('/admin/login', request.url));
-    }
-  }
-
-  // 2. If trying to access Employee Portal
-  if (pathname.startsWith('/portal')) {
-    if (!userId || role !== 'EMPLOYEE') {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-  }
-
-  // 3. If already logged in, don't show the login pages
+  // Allow login pages
   if (pathname === '/login' || pathname === '/admin/login') {
+    // If already logged in, redirect to appropriate portal
     if (userId) {
       const target = role === 'ADMIN' ? '/admin/employees' : '/portal';
       return NextResponse.redirect(new URL(target, request.url));
     }
+    return NextResponse.next();
+  }
+
+  // Protect all other routes - require authentication
+  if (!userId) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  // Role-based access for admin pages
+  if (pathname.startsWith('/admin') && role !== 'ADMIN') {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  // Role-based access for portal pages
+  if (pathname.startsWith('/portal') && role !== 'EMPLOYEE') {
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  // Ensure we match all relevant paths
-  matcher: ['/admin/:path*', '/portal/:path*', '/login'],
+  // Match all paths except static files
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };

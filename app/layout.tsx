@@ -20,10 +20,7 @@ export default function RootLayout({
       <body className={inter.className}>
         {/* 👇 The provider must be here for the toggle to work on the login page */}
         <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
+          storageKey="theme"
         >
           {children}
         </ThemeProvider>

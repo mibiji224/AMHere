@@ -4,6 +4,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { faker } from '@faker-js/faker';
 import dotenv from 'dotenv';
+import bcrypt from 'bcrypt';
 
 // Force load the .env file so the client can find the URL
 dotenv.config();
@@ -21,11 +22,13 @@ async function main() {
   console.log('🌱 Starting Database Seeder...');
 
   // Create Admin
+  const hashedPassword = await bcrypt.hash('admin123', 10);
   const admin = await prisma.user.upsert({
     where: { email: 'admin@company.com' },
     update: {},
     create: {
       email: 'admin@company.com',
+      password: hashedPassword,
       firstName: 'Desiree',
       lastName: 'Soronio',
       role: Role.ADMIN,
