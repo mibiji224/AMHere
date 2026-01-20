@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useTheme } from './ThemeProvider';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { logout } from '../login/action'; 
+import { logout } from '../login/action';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -16,12 +16,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (path === '/') return pathname === '/' || pathname.startsWith('/admin/employees/');
     return pathname.startsWith(path);
   };
-  
+
   // 👇 FIX 1: Use 'primary' and 'muted-foreground' instead of hardcoded blues/grays
   const linkStyle = (path: string) => `
     flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group font-medium text-sm
-    ${isActive(path) 
-      ? 'bg-primary text-primary-foreground shadow-md' 
+    ${isActive(path)
+      ? 'bg-primary text-primary-foreground shadow-md'
       : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
     }
   `;
@@ -29,17 +29,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     // 👇 FIX 2: Use 'bg-background' (from globals.css) instead of 'bg-gray-50'
     <div className="min-h-screen bg-background flex transition-colors duration-300">
-      
+
       {/* MOBILE HEADER */}
       <div className="lg:hidden fixed top-0 left-0 right-0 bg-background/80 border-b border-border z-50 flex justify-between items-center px-4 h-16 backdrop-blur-md">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-             <span className="font-bold text-primary-foreground">A</span>
+            <span className="font-bold text-primary-foreground">A</span>
           </div>
           <span className="font-bold text-lg text-foreground">AM-HERE</span>
         </div>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-foreground">
-            {isMobileMenuOpen ? '✕' : '☰'}
+          {isMobileMenuOpen ? '✕' : '☰'}
         </button>
       </div>
 
@@ -50,16 +50,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
         lg:translate-x-0 lg:static lg:flex-shrink-0
       `}>
-        
+
         {/* Sidebar Header */}
         <div className="flex p-6 items-center gap-3 border-b border-border flex-shrink-0">
           <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-            <svg className="w-5 h-5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
+            <a href="/admin/employees">
+              <svg
+                className="w-5 h-5 text-primary-foreground"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                />
+              </svg>
+            </a>
           </div>
           <div>
-            <span className="font-bold text-lg block leading-none text-foreground">AM-HERE</span>
+            <span className="font-bold text-lg block leading-none text-primary"><a href="/admin/employees">AMHere</a></span>
             <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mt-1 block">Admin Portal</span>
           </div>
         </div>
@@ -75,7 +87,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <span>Schedules</span>
           </Link>
           <Link href="/admin/leaves" className={linkStyle('/admin/leaves')} onClick={() => setIsMobileMenuOpen(false)}>
-             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
             <span>Leave Requests</span>
           </Link>
           <Link href="/admin/payroll" className={linkStyle('/admin/payroll')} onClick={() => setIsMobileMenuOpen(false)}>
@@ -88,18 +100,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="p-4 border-t border-border bg-muted/20 space-y-4">
           <div className="flex items-center justify-between px-2">
             <span className="text-sm font-medium text-muted-foreground">Dark Mode</span>
-            <button 
-              onClick={toggleTheme} 
+            <button
+              onClick={toggleTheme}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isDarkMode ? 'bg-primary' : 'bg-input'}`}
             >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isDarkMode ? 'translate-x-6' : 'translate-x-1'}`}/>
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isDarkMode ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
           <form action={logout}>
-             <button className="w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-colors border border-transparent hover:border-destructive/20">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                <span>Sign Out</span>
-             </button>
+            <button className="w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-colors border border-transparent hover:border-destructive/20">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+              <span>Sign Out</span>
+            </button>
           </form>
         </div>
       </aside>

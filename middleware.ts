@@ -1,33 +1,42 @@
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/request';
 
 export function middleware(request: NextRequest) {
+  // We use session_userid as the primary check for being "logged in"
+  const userId = request.cookies.get('session_userid')?.value;
   const role = request.cookies.get('session_role')?.value;
-  const pathname = request.nextUrl.pathname;
+  const { pathname } = request.nextUrl;
 
-  // 1. Protect Admin Routes (except login page)
-  if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
-    if (role !== 'ADMIN') {
-      return NextResponse.redirect(new URL('/login', request.url));
+  // 1. If trying to access Admin pages
+  if (pathname.startsWith('/admin')) {
+    // Allow the admin login page itself
+    if (pathname === '/admin/login') return NextResponse.next();
+
+    // Block if not an Admin or not logged in
+    if (!userId || role !== 'ADMIN') {
+      return NextResponse.redirect(new URL('/admin/login', request.url));
     }
   }
 
-  // 2. Protect Employee Routes
+  // 2. If trying to access Employee Portal
   if (pathname.startsWith('/portal')) {
-    if (role !== 'EMPLOYEE') {
+    if (!userId || role !== 'EMPLOYEE') {
       return NextResponse.redirect(new URL('/login', request.url));
     }
   }
 
-  // 3. Redirect Logged-in Users away from Login Page
-  if (pathname === '/login') {
-    if (role === 'ADMIN') return NextResponse.redirect(new URL('/', request.url));
-    if (role === 'EMPLOYEE') return NextResponse.redirect(new URL('/portal', request.url));
+  // 3. If already logged in, don't show the login pages
+  if (pathname === '/login' || pathname === '/admin/login') {
+    if (userId) {
+      const target = role === 'ADMIN' ? '/admin/employees' : '/portal';
+      return NextResponse.redirect(new URL(target, request.url));
+    }
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/', '/admin/:path*', '/portal/:path*', '/login'],
+  // Ensure we match all relevant paths
+  matcher: ['/admin/:path*', '/portal/:path*', '/login'],
 };
