@@ -71,7 +71,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </a>
           </div>
           <div>
-            <span className="font-bold text-lg block leading-none text-primary"><a href="/admin/employees">AMHere</a></span>
+            <span className="font-bold text-lg block leading-none text-primary"><a href="/admin/dashboard">AMHere</a></span>
             <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mt-1 block">Admin Portal</span>
           </div>
         </div>
