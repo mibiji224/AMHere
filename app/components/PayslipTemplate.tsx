@@ -19,7 +19,7 @@ export default function PayslipTemplate({
       {/* Receipt Header */}
       <div className="text-center border-b-2 border-black pb-4 mb-6">
         <h1 className="text-2xl font-bold uppercase tracking-widest">OFFICIAL PAYSLIP</h1>
-        <p className="text-sm mt-1">AM-HERE Management System</p>
+        <p className="text-sm mt-1">AMHere Management System</p>
         <p className="text-xs text-gray-500 mt-1">Date: {currentDate}</p>
       </div>
 
