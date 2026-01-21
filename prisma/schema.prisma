@@ -45,7 +45,7 @@ model User {
   id            String   @id @default(cuid())
   email         String   @unique
   password      String   @default("123456")
-  employeeId    String   @unique @default("000000") 
+  employeeId    String   @unique
   
   firstName     String
   lastName      String

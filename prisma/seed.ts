@@ -1,7 +1,5 @@
 // @ts-nocheck
 import { PrismaClient, Role, AttendanceStatus } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
 import { faker } from '@faker-js/faker';
 import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
@@ -9,19 +7,16 @@ import bcrypt from 'bcrypt';
 // Force load the .env file so the client can find the URL
 dotenv.config();
 
-const connectionString = process.env.DATABASE_URL;
-
-// Create a connection pool
-const pool = new Pool({ connectionString });
-
-// Create the Prisma Client with the adapter
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+// Initialize standard Prisma Client (No adapter needed for seeding)
+const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Starting Database Seeder...');
 
-  // Create Admin
+  // Clear existing users
+  await prisma.user.deleteMany();
+
+  // 1. Create Admin
   const hashedPassword = await bcrypt.hash('admin123', 10);
   const admin = await prisma.user.upsert({
     where: { email: 'admin@company.com' },
@@ -34,17 +29,20 @@ async function main() {
       role: Role.ADMIN,
       hourlyRate: 50.00,
       position: 'Supervisor',
+      employeeId: '999999',
     },
   });
+  console.log(`✅ Created Admin: ${admin.email} (Pass: admin123)`);
 
-  console.log(`✅ Created Admin: ${admin.email}`);
-
-  // Create Employees
+  // 2. Create Employees
   for (let i = 0; i < 5; i++) {
     const firstName = faker.person.firstName();
     const lastName = faker.person.lastName();
-    const email = `${firstName.toLowerCase()}@company.com`;
+    const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@company.com`;
     
+    // 👇 FIX: Guaranteed Unique 6-Digit ID
+    const uniqueId = String(100000 + i); 
+
     const emp = await prisma.user.upsert({
       where: { email },
       update: {},
@@ -55,27 +53,12 @@ async function main() {
         role: Role.EMPLOYEE,
         hourlyRate: 3.00,
         position: 'Full Stack Developer',
+        employeeId: uniqueId, 
       },
     });
 
-    await prisma.attendance.create({
-      data: {
-        userId: emp.id,
-        date: new Date(),
-        timeIn: new Date(),
-        status: AttendanceStatus.PRESENT, 
-        dailyLog: {
-          create: {
-            userId: emp.id,
-            ticketsDone: "Fixed bug",
-            blockers: "None",
-            actionItems: "Deploy",
-          }
-        }
-      }
-    });
+    console.log(`👤 Created Employee: ${firstName} ${lastName} | ID: ${uniqueId}`);
   }
-  console.log('✅ Generated employees.');
 }
 
 main()
