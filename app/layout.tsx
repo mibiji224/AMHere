@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "./components/ThemeProvider"; // Ensure this path is correct
+import { ThemeProvider } from "./components/ThemeProvider"; // 👈 This import is crucial
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,10 +18,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        {/* 👇 The provider must be here for the toggle to work on the login page */}
-        <ThemeProvider
-          storageKey="theme"
-        >
+        {/* 👇 The ThemeProvider MUST wrap {children} here */}
+        <ThemeProvider storageKey="theme">
           {children}
         </ThemeProvider>
       </body>

@@ -49,7 +49,7 @@ export default function ScheduleEditor({
             {isEditing ? (
               <>
                 <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 rounded-lg text-xs font-bold border border-border bg-background hover:bg-secondary transition">Cancel</button>
-                <button type="submit" className="px-4 py-2 rounded-lg text-xs font-bold bg-green-600 hover:bg-green-700 text-white shadow-sm transition">💾 Save Changes</button>
+                <button type="submit" className="px-4 py-2 rounded-lg text-xs font-bold bg-green-600 hover:bg-green-700 text-white shadow-sm transition">Save Changes</button>
               </>
             ) : (
               <button type="button" onClick={() => setIsEditing(true)} className="px-4 py-2 rounded-lg text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 transition">✎ Edit Default Schedule</button>
