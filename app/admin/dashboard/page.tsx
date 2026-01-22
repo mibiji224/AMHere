@@ -10,6 +10,9 @@ import {
   MoreVertical
 } from 'lucide-react';
 
+// 👇 FIX: Force dynamic rendering to prevent build-time database connection errors
+export const dynamic = 'force-dynamic';
+
 export default async function AdminDashboard() {
   // 1. FETCH ACTUAL COUNTS
   const totalEmployees = await prisma.user.count({ where: { role: 'EMPLOYEE' } });
