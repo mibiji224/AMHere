@@ -1,5 +1,3 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -34,7 +32,6 @@ enum LeaveStatus {
   REJECTED
 }
 
-// 👇 NEW ENUM
 enum LeaveType {
   PAID
   UNPAID
@@ -52,17 +49,15 @@ model User {
   position      String   @default("Employee")
   hourlyRate    Decimal  @default(0.00)
   
-  // ✅ Fixed: Only one 'role' definition here
   role          Role     @default(EMPLOYEE)
   
   isActive      Boolean  @default(true)
-  
-  // 👇 NEW: Track Paid Leave Credits
   leaveCredits  Int      @default(0)
 
-  // 👇 NEW BIO DATA
+  // BIO DATA
   birthday      DateTime?
   photoUrl      String?   
+  contactNumber String?  // 👈 Added Field
   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -79,10 +74,8 @@ model Attendance {
   
   timeIn        DateTime @default(now())
   timeOut       DateTime?
-  
   breakStart    DateTime?
   breakEnd      DateTime?
-  
   status        AttendanceStatus @default(PRESENT)
   
   userId        String
@@ -114,8 +107,6 @@ model LeaveRequest {
   endDate       DateTime
   reason        String
   status        LeaveStatus @default(PENDING)
-  
-  // 👇 NEW: Track if it is Paid or Unpaid
   type          LeaveType   @default(UNPAID) 
 
   createdAt     DateTime    @default(now())
@@ -130,8 +121,7 @@ model ScheduleChangeRequest {
   user             User     @relation(fields: [userId], references: [id])
   
   reason           String   
-  proposedSchedule Json?  
-
+  proposedSchedule Json?
   status           String   @default("PENDING") 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

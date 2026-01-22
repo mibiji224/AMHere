@@ -1,153 +1,64 @@
-import { prisma } from '../lib/prisma';
+import { prisma } from '@/app/lib/prisma';
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { logout } from '../login/action';
-import { toggleAttendance, toggleBreak } from '../actions';
-import LeaveSection from './LeaveSection'; 
-import ScheduleRequestSection from './ScheduleRequestSection'; 
-import ThemeToggle from '../components/ThemeToggle'; 
-import { ThemeProvider } from '../components/ThemeProvider'; 
+import EmployeeLayout from '@/app/components/EmployeeLayout';
+import { ClockInButton, ClockOutButton, toggleBreak } from './actions';
+import { Coffee } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
 export default async function EmployeePortal() {
   const cookieStore = await cookies();
   const userId = cookieStore.get('session_userid')?.value;
+  if (!userId) return <div>Unauthorized</div>;
 
-  if (!userId) redirect('/login');
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return <div>User not found</div>;
 
-  // 1. Fetch User Data
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: {
-      attendance: {
-        where: { 
-          date: { gte: new Date(new Date().setHours(0,0,0,0)) } 
-        },
-        orderBy: { timeIn: 'desc' },
-        take: 1
-      },
-      leaveRequests: {
-        orderBy: { createdAt: 'desc' },
-        take: 5
-      },
-      scheduleRequests: {
-        orderBy: { createdAt: 'desc' },
-        take: 5
-      }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const todayLog = await prisma.attendance.findFirst({
+    where: {
+      userId: user.id,
+      date: { gte: today, lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) }
     }
   });
 
-  if (!user) return <div>User not found</div>;
-
-  // 2. Calculate Status
-  const todayLog = user.attendance[0];
-  const isClockedIn = !!todayLog && !todayLog.timeOut;
-  const isOnBreak = !!todayLog && !!todayLog.breakStart && !todayLog.breakEnd;
-
-  let breakDurationMinutes = 0;
-  if (isOnBreak && todayLog.breakStart) {
-    const start = new Date(todayLog.breakStart).getTime();
-    const now = new Date().getTime();
-    breakDurationMinutes = Math.floor((now - start) / 60000);
-  }
+  const isClockedIn = !!todayLog?.timeIn && !todayLog?.timeOut;
+  const isClockedOut = !!todayLog?.timeOut;
+  const isOnBreak = !!todayLog?.breakStart && !todayLog?.breakEnd;
 
   return (
-    // 👇 WRAPPER: Ensures this page uses 'portal-theme' instead of 'admin-theme'
-    <ThemeProvider storageKey="portal-theme">
-      <main className="min-h-screen bg-background flex flex-col transition-colors duration-300">
-        
-        {/* HEADER */}
-        <header className="bg-card p-4 shadow-sm flex justify-between items-center sticky top-0 z-10 border-b border-border">
-          <div>
-             <h1 className="font-bold text-foreground">My Portal</h1>
-             <p className="text-xs text-muted-foreground">Welcome, {user.firstName}</p>
-          </div>
-          
-          <div className="flex items-center gap-4">
-              <ThemeToggle />
-              
-              <form action={logout}>
-                <button className="text-sm text-destructive hover:bg-destructive/10 px-3 py-1 rounded font-medium transition">
-                  Logout
-                </button>
-              </form>
-          </div>
-        </header>
-
-        {/* CONTENT AREA */}
-        <div className="flex-1 flex flex-col items-center p-6 space-y-8 max-w-md mx-auto w-full">
-          
-          {/* STATUS CARD */}
-          <div className="text-center mt-4">
-             <div className={`inline-block p-6 rounded-full mb-4 shadow-sm transition-colors ${
-               isOnBreak ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400' :
-               isClockedIn ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400' : 'bg-secondary text-muted-foreground'
-             }`}>
-               <span className="text-5xl">
-                 {isOnBreak ? '☕️' : isClockedIn ? '⚡️' : 'zzz'}
-               </span>
-             </div>
-             
-             <h2 className="text-2xl font-bold text-foreground">
-               {isOnBreak ? 'On Break' : isClockedIn ? 'You are Clocked In' : 'You are Clocked Out'}
-             </h2>
-             
-             {isOnBreak && (
-               <p className={`mt-2 font-mono font-bold ${breakDurationMinutes > 60 ? 'text-destructive animate-pulse' : 'text-muted-foreground'}`}>
-                 {breakDurationMinutes} mins elapsed
-               </p>
-             )}
-          </div>
-
-          {/* CLOCK IN / BREAK BUTTONS */}
-          <div className="w-full space-y-3">
-            
-            {!isOnBreak && (
-               <form action={async () => {
-                 'use server';
-                 await toggleAttendance(userId);
-               }}>
-                 <button className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition transform active:scale-95 ${
-                   isClockedIn 
-                     ? 'bg-red-500 hover:bg-red-600 text-white dark:bg-red-900 dark:hover:bg-red-800 dark:text-red-100' 
-                     : 'bg-green-600 hover:bg-green-700 text-white dark:bg-green-800 dark:hover:bg-green-700 dark:text-green-100'
-                 }`}>
-                   {isClockedIn ? 'Clock Out' : 'Clock In'}
-                 </button>
-               </form>
-            )}
-
-            {isClockedIn && (
-              <form action={async () => {
-                  'use server';
-                  await toggleBreak(todayLog.id);
-              }}>
-                <button className={`w-full py-3 rounded-xl font-bold border-2 transition ${
-                  isOnBreak
-                    ? 'bg-yellow-400 border-yellow-500 text-yellow-900 shadow-md dark:bg-yellow-600 dark:border-yellow-700 dark:text-yellow-100'
-                    : 'bg-card border-yellow-400 text-yellow-600 hover:bg-yellow-50 dark:bg-secondary dark:border-yellow-700 dark:text-yellow-400 dark:hover:bg-yellow-900/20'
-                }`}>
-                  {isOnBreak ? 'End Break' : 'Take a Break'}
-                </button>
-              </form>
-            )}
-
-          </div>
-
-          {/* REQUEST SECTIONS (With The Fix) */}
-          <LeaveSection 
-            requests={user.leaveRequests} 
-            userEmail={user.email} // 👈 Added this prop
-          />
-          
-          <ScheduleRequestSection 
-            requests={user.scheduleRequests} 
-            userEmail={user.email} // 👈 Added this prop
-          />
-
+    <EmployeeLayout>
+      <div className="flex flex-col items-center justify-center min-h-[80vh] space-y-8">
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl md:text-5xl font-black text-foreground">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</h1>
+          <p className="text-muted-foreground font-medium text-lg">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</p>
         </div>
-      </main>
-    </ThemeProvider>
+        <div className="w-full max-w-md bg-card border border-border rounded-2xl p-8 shadow-lg text-center space-y-8">
+          <div className="flex justify-center">
+            <div className={`w-24 h-24 rounded-full flex items-center justify-center border-4 shadow-inner overflow-hidden ${isOnBreak ? 'border-orange-500 bg-orange-100' : 'border-background bg-secondary'}`}>
+               {isOnBreak ? <Coffee size={40} className="text-orange-600 animate-pulse" /> : user.photoUrl ? <img src={user.photoUrl} alt="Me" className="w-full h-full object-cover" /> : <span className="text-2xl font-bold text-muted-foreground">{user.firstName[0]}{user.lastName[0]}</span>}
+            </div>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">{isOnBreak ? 'Enjoy your break!' : `Good day, ${user.firstName}!`}</h2>
+            <p className="text-muted-foreground mt-1">{isOnBreak ? 'Click below when you return.' : 'Ready to work?'}</p>
+          </div>
+          <div className="space-y-3">
+            {!isClockedIn && !isClockedOut && (
+              <form action={ClockInButton} className="w-full"><input type="hidden" name="userId" value={user.id} /><button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl text-lg shadow-blue-500/20 shadow-lg transition-all transform hover:scale-[1.02]">Clock In</button></form>
+            )}
+            {isClockedIn && (
+              <>
+                <form action={toggleBreak} className="w-full"><input type="hidden" name="userId" value={user.id} /><button className={`w-full font-bold py-3 rounded-xl text-md shadow-lg transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2 ${isOnBreak ? 'bg-orange-600 hover:bg-orange-700 text-white' : 'bg-secondary hover:bg-secondary/80 text-foreground border border-border'}`}>{isOnBreak ? 'End Break' : <><Coffee size={18} /> Take a Break</>}</button></form>
+                {!isOnBreak && <form action={ClockOutButton} className="w-full"><input type="hidden" name="userId" value={user.id} /><button className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-xl text-lg shadow-red-500/20 shadow-lg transition-all transform hover:scale-[1.02]">Clock Out</button></form>}
+              </>
+            )}
+            {isClockedOut && <div className="p-4 bg-green-500/10 text-green-600 rounded-xl font-bold border border-green-500/20">You are done for the day! 🎉</div>}
+          </div>
+        </div>
+      </div>
+    </EmployeeLayout>
   );
 }

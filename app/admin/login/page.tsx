@@ -1,7 +1,75 @@
 // app/admin/login/page.tsx
+'use client'
+
 import { loginAdmin } from '@/app/login/action'; 
 import ThemeToggle from '@/app/components/ThemeToggle'; 
 import Link from 'next/link';
+import { useState } from 'react';
+import { useFormStatus } from 'react-dom';
+
+function AdminLoginForm() {
+  const [error, setError] = useState<string | null>(null);
+  const { pending } = useFormStatus();
+
+  async function handleSubmit(formData: FormData) {
+    setError(null);
+    const result = await loginAdmin(formData);
+    if (result?.error) {
+      setError(result.error);
+    }
+  }
+
+  return (
+    <>
+      {error && (
+        <div className="w-full bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4 flex items-start gap-3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <div>
+            <p className="text-sm font-semibold text-red-800 dark:text-red-300">Login Failed</p>
+            <p className="text-sm text-red-700 dark:text-red-400 mt-1">{error}</p>
+          </div>
+        </div>
+      )}
+      <form action={handleSubmit} className="space-y-4">
+        
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-muted-foreground uppercase">Email Address</label>
+          <input 
+            name="email" 
+            type="email" 
+            placeholder="admin@company.com" 
+            required 
+            disabled={pending}
+            className="w-full bg-background border border-input rounded-lg p-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-purple-500 transition disabled:opacity-60 disabled:cursor-not-allowed"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-muted-foreground uppercase">Password</label>
+          <input 
+            name="password" 
+            type="password" 
+            placeholder="••••••••" 
+            required 
+            disabled={pending}
+            className="w-full bg-background border border-input rounded-lg p-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-purple-500 transition disabled:opacity-60 disabled:cursor-not-allowed"
+          />
+        </div>
+
+        <button 
+          type="submit"
+          disabled={pending}
+          className="w-full bg-foreground text-background hover:bg-foreground/90 disabled:opacity-70 disabled:cursor-not-allowed font-bold py-3 rounded-lg shadow-sm transition active:scale-95"
+        >
+          {pending ? 'Logging in...' : 'Dashboard Login'}
+        </button>
+
+      </form>
+    </>
+  );
+}
 
 export default function AdminLoginPage() {
   return (
@@ -22,35 +90,7 @@ export default function AdminLoginPage() {
         </div>
 
         <div className="bg-card border border-border shadow-sm rounded-xl p-6 sm:p-8">
-          <form action={loginAdmin} className="space-y-4">
-            
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Email Address</label>
-              <input 
-                name="email" 
-                type="email" 
-                placeholder="admin@company.com" 
-                required 
-                className="w-full bg-background border border-input rounded-lg p-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-purple-500 transition"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Password</label>
-              <input 
-                name="password" 
-                type="password" 
-                placeholder="••••••••" 
-                required 
-                className="w-full bg-background border border-input rounded-lg p-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-purple-500 transition"
-              />
-            </div>
-
-            <button className="w-full bg-foreground text-background hover:bg-foreground/90 font-bold py-3 rounded-lg shadow-sm transition active:scale-95">
-              Dashboard Login
-            </button>
-
-          </form>
+          <AdminLoginForm />
         </div>
 
         <div className="text-center">

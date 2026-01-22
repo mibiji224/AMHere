@@ -3,6 +3,73 @@
 import { loginEmployee } from './action';
 import ThemeToggle from '../components/ThemeToggle'; 
 import Link from 'next/link'; // 👈 Import the Next.js Link component
+import { useState } from 'react';
+import { useFormStatus } from 'react-dom';
+
+function EmployeeLoginForm() {
+  const [error, setError] = useState<string | null>(null);
+  const { pending } = useFormStatus();
+
+  async function handleSubmit(formData: FormData) {
+    setError(null);
+    const result = await loginEmployee(formData);
+    if (result?.error) {
+      setError(result.error);
+    }
+  }
+
+  return (
+    <>
+      {error && (
+        <div className="w-full bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4 flex items-start gap-3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <div>
+            <p className="text-sm font-semibold text-red-800 dark:text-red-300">Login Failed</p>
+            <p className="text-sm text-red-700 dark:text-red-400 mt-1">{error}</p>
+          </div>
+        </div>
+      )}
+      <form action={handleSubmit} className="space-y-4">
+        
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-muted-foreground uppercase">Surname</label>
+          <input 
+            name="lastName" 
+            type="text" 
+            placeholder="e.g. Soronio" 
+            required 
+            disabled={pending}
+            className="w-full bg-background border border-input rounded-lg p-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-blue-500 transition disabled:opacity-60 disabled:cursor-not-allowed"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-muted-foreground uppercase">6-Digit ID Code</label>
+          <input 
+            name="employeeId" 
+            type="password" 
+            inputMode="numeric" 
+            placeholder="000000" 
+            required 
+            disabled={pending}
+            className="w-full bg-background border border-input rounded-lg p-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-blue-500 transition tracking-widest text-center font-mono disabled:opacity-60 disabled:cursor-not-allowed"
+          />
+        </div>
+
+        <button 
+          type="submit"
+          disabled={pending}
+          className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-70 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg shadow-sm transition active:scale-95"
+        >
+          {pending ? 'Verifying...' : 'Access Portal'}
+        </button>
+
+      </form>
+    </>
+  );
+}
 
 export default function EmployeeLoginPage() {
   return (
@@ -25,36 +92,7 @@ export default function EmployeeLoginPage() {
 
         {/* Login Card */}
         <div className="bg-card border border-border shadow-sm rounded-xl p-6 sm:p-8">
-          <form action={loginEmployee} className="space-y-4">
-            
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Surname</label>
-              <input 
-                name="lastName" 
-                type="text" 
-                placeholder="e.g. Soronio" 
-                required 
-                className="w-full bg-background border border-input rounded-lg p-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-blue-500 transition"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground uppercase">6-Digit ID Code</label>
-              <input 
-                name="employeeId" 
-                type="password" 
-                inputMode="numeric" 
-                placeholder="000000" 
-                required 
-                className="w-full bg-background border border-input rounded-lg p-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-blue-500 transition tracking-widest text-center font-mono"
-              />
-            </div>
-
-            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-sm transition active:scale-95">
-              Access Portal
-            </button>
-
-          </form>
+          <EmployeeLoginForm />
         </div>
 
         {/* 👇 FIX: Use Link component instead of <a> tag */}
