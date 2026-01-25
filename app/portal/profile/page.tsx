@@ -9,7 +9,6 @@ export default async function ProfilePage() {
   const userId = cookieStore.get('session_userid')?.value;
   if (!userId) return null;
 
-  // 1. Fetch Raw User Data
   const rawUser = await prisma.user.findUnique({ 
     where: { id: userId },
     include: {
@@ -21,16 +20,27 @@ export default async function ProfilePage() {
   
   if (!rawUser) return null;
 
-  // 2. FIX: Convert Decimal to Number so Client Component can read it
   const user = {
     ...rawUser,
     hourlyRate: rawUser.hourlyRate.toNumber() 
   };
 
+  // Check for pending email verification
+  const pendingToken = await prisma.emailVerificationToken.findFirst({
+    where: {
+      userId,
+      expiresAt: { gt: new Date() }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  const pendingEmailVerification = pendingToken 
+    ? { pendingEmail: pendingToken.newEmail } 
+    : null;
+
   return (
     <EmployeeLayout>
       <div className="max-w-6xl mx-auto space-y-8">
-        {/* Header */}
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 overflow-hidden">
              {user.photoUrl ? (
@@ -45,9 +55,12 @@ export default async function ProfilePage() {
           </div>
         </div>
 
-        {/* Load the Smart Client View */}
-        <ProfileView user={user} tasks={user.tasks} />
+        <ProfileView 
+          user={user} 
+          tasks={user.tasks} 
+          pendingEmailVerification={pendingEmailVerification}
+        />
       </div>
     </EmployeeLayout>
   );
-}
+} 

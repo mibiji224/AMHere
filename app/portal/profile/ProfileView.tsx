@@ -1,16 +1,95 @@
 'use client';
 
-import { useState } from 'react';
-import { User, Mail, Phone, Clock, Calendar, CheckCircle, Circle, Edit2, Save, X, Briefcase, ChevronDown } from 'lucide-react';
-import { updateProfile, requestScheduleChange, toggleTask } from './actions';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { User, Mail, Phone, Clock, Calendar, CheckCircle, Circle, Edit2, Save, X, Briefcase, ChevronDown, AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
+import { updateProfile, requestScheduleChange, toggleTask, cancelEmailVerification, resendVerificationEmail } from './actions';
 
-export default function ProfileView({ user, tasks }: { user: any, tasks: any[] }) {
+interface ProfileViewProps {
+  user: any;
+  tasks: any[];
+  pendingEmailVerification: { pendingEmail: string } | null;
+}
+
+export default function ProfileView({ user, tasks, pendingEmailVerification }: ProfileViewProps) {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('schedule'); 
   const [isEditing, setIsEditing] = useState(false);
   const [isRequestingTime, setIsRequestingTime] = useState(false);
-  const [requestType, setRequestType] = useState<'days' | 'time'>('days'); 
+  const [requestType, setRequestType] = useState<'days' | 'time'>('days');
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+  const [isResending, setIsResending] = useState(false);
 
-  // Helper to format 24h time to 12h AM/PM
+  useEffect(() => {
+    const success = searchParams.get('success');
+    const error = searchParams.get('error');
+
+    if (success === 'email_verified') {
+      setMessage({ type: 'success', text: 'Your email has been verified and updated successfully!' });
+    } else if (error === 'invalid_token') {
+      setMessage({ type: 'error', text: 'Invalid verification link. Please request a new one.' });
+    } else if (error === 'token_expired') {
+      setMessage({ type: 'error', text: 'Verification link has expired. Please request a new one.' });
+    } else if (error === 'email_taken') {
+      setMessage({ type: 'error', text: 'This email is now taken by another account.' });
+    }
+
+    if (success || error) {
+      const timer = setTimeout(() => setMessage(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
+
+  const handleProfileSubmit = async (formData: FormData) => {
+    setIsSubmitting(true);
+    setMessage(null);
+
+    try {
+      const result = await updateProfile(formData);
+      
+      if (result?.error) {
+        setMessage({ type: 'error', text: result.error });
+      } else if (result?.emailPending) {
+        setMessage({ type: 'info', text: result.message || 'Verification email sent!' });
+        setIsEditing(false);
+      } else {
+        setMessage({ type: 'success', text: 'Profile updated successfully!' });
+        setIsEditing(false);
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Something went wrong. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setIsResending(true);
+    try {
+      const result = await resendVerificationEmail(user.id);
+      if (result.error) {
+        setMessage({ type: 'error', text: result.error });
+      } else {
+        setMessage({ type: 'success', text: 'Verification email resent!' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to resend email' });
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const handleCancelVerification = async () => {
+    try {
+      await cancelEmailVerification(user.id);
+      setMessage({ type: 'info', text: 'Email change cancelled.' });
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to cancel' });
+    }
+  };
+
   const formatTime = (time: string) => {
     if (!time) return '--:--';
     const [h, m] = time.split(':');
@@ -48,10 +127,27 @@ export default function ProfileView({ user, tasks }: { user: any, tasks: any[] }
       {/* MAIN CONTENT AREA */}
       <div className="lg:col-span-3 bg-card border border-border rounded-2xl p-8 shadow-sm min-h-[500px]">
         
+        {/* Global Message Toast */}
+        {message && (
+          <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300 ${
+            message.type === 'success' ? 'bg-green-50 border border-green-200 text-green-700' :
+            message.type === 'error' ? 'bg-red-50 border border-red-200 text-red-700' :
+            'bg-blue-50 border border-blue-200 text-blue-700'
+          }`}>
+            {message.type === 'success' && <CheckCircle size={20} />}
+            {message.type === 'error' && <AlertCircle size={20} />}
+            {message.type === 'info' && <Mail size={20} />}
+            <span className="font-medium text-sm">{message.text}</span>
+            <button onClick={() => setMessage(null)} className="ml-auto opacity-60 hover:opacity-100">
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
         {/* --- TAB 1: PERSONAL DETAILS --- */}
         {activeTab === 'details' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-             <div className="flex justify-between items-center pb-6 border-b border-border">
+            <div className="flex justify-between items-center pb-6 border-b border-border">
               <div>
                 <h2 className="text-2xl font-black">Personal Details</h2>
                 <p className="text-muted-foreground">Manage your contact information.</p>
@@ -63,20 +159,123 @@ export default function ProfileView({ user, tasks }: { user: any, tasks: any[] }
                 {isEditing ? <><X size={16} /> Cancel Edit</> : <><Edit2 size={16} /> Edit Details</>}
               </button>
             </div>
-            <form action={async (formData) => { await updateProfile(formData); setIsEditing(false); }} className="space-y-6">
-              <input type="hidden" name="userId" value={user.id} />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2"><label className="text-sm font-bold text-muted-foreground">First Name</label><input disabled value={user.firstName} className="w-full p-3 bg-secondary/50 rounded-xl font-bold opacity-70 cursor-not-allowed" /></div>
-                <div className="space-y-2"><label className="text-sm font-bold text-muted-foreground">Last Name</label><input disabled value={user.lastName} className="w-full p-3 bg-secondary/50 rounded-xl font-bold opacity-70 cursor-not-allowed" /></div>
+
+            {/* Pending Email Verification Banner */}
+            {pendingEmailVerification && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                    <Mail className="text-amber-600" size={20} />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-amber-800">Email Verification Pending</h4>
+                    <p className="text-sm text-amber-700 mt-1">
+                      We sent a verification link to <strong>{pendingEmailVerification.pendingEmail}</strong>. 
+                      Please check your inbox and click the link to confirm.
+                    </p>
+                    <div className="flex gap-2 mt-3">
+                      <button 
+                        onClick={handleResendVerification}
+                        disabled={isResending}
+                        className="flex items-center gap-1.5 text-xs font-bold text-amber-700 hover:text-amber-900 disabled:opacity-50"
+                      >
+                        {isResending ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                        Resend Email
+                      </button>
+                      <span className="text-amber-300">|</span>
+                      <button 
+                        onClick={handleCancelVerification}
+                        className="text-xs font-bold text-amber-700 hover:text-amber-900"
+                      >
+                        Cancel Change
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2"><label className="flex items-center gap-2 text-sm font-bold text-muted-foreground"><Mail size={16}/> Email Address</label><input name="email" defaultValue={user.email} disabled={!isEditing} className={`w-full p-3 rounded-xl font-medium transition-all ${isEditing ? 'bg-background border-2 border-blue-600' : 'bg-secondary/50 border-transparent'}`} /></div>
-              <div className="space-y-2"><label className="flex items-center gap-2 text-sm font-bold text-muted-foreground"><Phone size={16}/> Contact Number</label><input name="contactNumber" defaultValue={user.contactNumber || ''} disabled={!isEditing} className={`w-full p-3 rounded-xl font-medium transition-all ${isEditing ? 'bg-background border-2 border-blue-600' : 'bg-secondary/50 border-transparent'}`} /></div>
-              {isEditing && (<div className="pt-4 flex justify-end"><button className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg"><Save size={18} /> Save Changes</button></div>)}
+            )}
+
+            <form action={handleProfileSubmit} className="space-y-6">
+              <input type="hidden" name="userId" value={user.id} />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-muted-foreground">First Name</label>
+                  <input disabled value={user.firstName} className="w-full p-3 bg-secondary/50 rounded-xl font-bold opacity-70 cursor-not-allowed" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-muted-foreground">Last Name</label>
+                  <input disabled value={user.lastName} className="w-full p-3 bg-secondary/50 rounded-xl font-bold opacity-70 cursor-not-allowed" />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
+                  <Mail size={16}/> Email Address
+                  {pendingEmailVerification && (
+                    <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold uppercase">
+                      Pending Verification
+                    </span>
+                  )}
+                </label>
+                <input 
+                  name="email" 
+                  type="email"
+                  defaultValue={user.email} 
+                  disabled={!isEditing || !!pendingEmailVerification} 
+                  className={`w-full p-3 rounded-xl font-medium transition-all ${
+                    isEditing && !pendingEmailVerification 
+                      ? 'bg-background border-2 border-blue-600' 
+                      : 'bg-secondary/50 border-transparent'
+                  }`} 
+                />
+                {isEditing && !pendingEmailVerification && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                    <AlertCircle size={12} />
+                    Changing your email will require verification.
+                  </p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
+                  <Phone size={16}/> Contact Number
+                </label>
+                <input 
+                  name="contactNumber" 
+                  defaultValue={user.contactNumber || ''} 
+                  disabled={!isEditing} 
+                  placeholder="e.g. +63 912 345 6789"
+                  className={`w-full p-3 rounded-xl font-medium transition-all ${isEditing ? 'bg-background border-2 border-blue-600' : 'bg-secondary/50 border-transparent'}`} 
+                />
+              </div>
+              
+              {isEditing && (
+                <div className="pt-4 flex justify-end">
+                  <button 
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save size={18} />
+                        Save Changes
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </form>
           </div>
         )}
 
-        {/* --- TAB 2: SCHEDULE & SHIFT (FIXED PROPORTIONS) --- */}
+        {/* --- TAB 2: SCHEDULE & SHIFT --- */}
         {activeTab === 'schedule' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
             <div className="flex justify-between items-center pb-6 border-b border-border">
@@ -98,10 +297,7 @@ export default function ProfileView({ user, tasks }: { user: any, tasks: any[] }
             {!isRequestingTime ? (
               <div className="flex flex-col gap-4">
                 
-                {/* 1. DAILY SHIFT CARD (Compact & Proportional) */}
                 <div className="bg-blue-50/50 border border-blue-100 p-5 rounded-2xl flex flex-col md:flex-row items-center gap-5 shadow-sm">
-                   
-                   {/* Left: Compact Width (w-36) to save space */}
                    <div className="flex items-center gap-3 w-full md:w-36 shrink-0">
                       <div className="h-10 w-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shadow-sm">
                         <Clock size={20} />
@@ -111,11 +307,7 @@ export default function ProfileView({ user, tasks }: { user: any, tasks: any[] }
                         <p className="text-[10px] font-bold uppercase text-blue-400 tracking-wider">Regular</p>
                       </div>
                    </div>
-
-                   {/* Divider */}
                    <div className="hidden md:block w-px h-10 bg-blue-200/60" />
-
-                   {/* Right: Content (Horizontal Flow) */}
                    <div className="flex-1 flex flex-col md:flex-row items-center justify-between gap-4 w-full">
                       <div className="flex items-center gap-8 md:gap-12">
                          <div>
@@ -134,10 +326,7 @@ export default function ProfileView({ user, tasks }: { user: any, tasks: any[] }
                    </div>
                 </div>
 
-                {/* 2. WORK DAYS CARD (No Wrap) */}
                 <div className="bg-card border border-border p-5 rounded-2xl flex flex-col md:flex-row items-center gap-5 shadow-sm">
-                   
-                   {/* Left: Compact Width (w-36) */}
                    <div className="flex items-center gap-3 w-full md:w-36 shrink-0">
                       <div className="h-10 w-10 rounded-xl bg-secondary text-muted-foreground flex items-center justify-center">
                         <Calendar size={20} />
@@ -147,11 +336,7 @@ export default function ProfileView({ user, tasks }: { user: any, tasks: any[] }
                         <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Weekly</p>
                       </div>
                    </div>
-                   
-                   {/* Divider */}
                    <div className="hidden md:block w-px h-10 bg-border" />
-
-                   {/* Right: Days List (Forced One Line) */}
                    <div className="flex-1 w-full overflow-x-auto no-scrollbar">
                       <div className="flex flex-nowrap items-center justify-between md:justify-start gap-1.5 min-w-max">
                         {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map(day => (
@@ -159,7 +344,6 @@ export default function ProfileView({ user, tasks }: { user: any, tasks: any[] }
                              {day}
                            </span>
                         ))}
-                        {/* Ghosted Weekend Badges */}
                         <span className="h-8 w-11 flex items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground font-bold text-xs opacity-50">Sat</span>
                         <span className="h-8 w-11 flex items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground font-bold text-xs opacity-50">Sun</span>
                       </div>
@@ -168,7 +352,6 @@ export default function ProfileView({ user, tasks }: { user: any, tasks: any[] }
 
               </div>
             ) : (
-              /* REQUEST FORM (Unchanged) */
               <form action={async (formData) => {
                 await requestScheduleChange(formData);
                 setIsRequestingTime(false);
@@ -178,12 +361,10 @@ export default function ProfileView({ user, tasks }: { user: any, tasks: any[] }
                    <h3 className="font-black text-xl text-blue-900">New Request</h3>
                    <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Draft</span>
                 </div>
-                {/* TABS */}
                 <div className="flex p-1.5 bg-secondary/50 rounded-xl">
                   <button type="button" onClick={() => setRequestType('days')} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-xs font-black uppercase tracking-wide transition-all ${requestType === 'days' ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5' : 'text-muted-foreground hover:text-foreground'}`}><Calendar size={16} /> Change Work Days</button>
                   <button type="button" onClick={() => setRequestType('time')} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-xs font-black uppercase tracking-wide transition-all ${requestType === 'time' ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5' : 'text-muted-foreground hover:text-foreground'}`}><Clock size={16} /> Change Shift Times</button>
                 </div>
-                {/* TAB CONTENT */}
                 {requestType === 'days' && (
                   <div className="space-y-3 animate-in fade-in duration-300">
                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Proposed Weekly Schedule</label>
