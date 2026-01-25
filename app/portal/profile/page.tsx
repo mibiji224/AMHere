@@ -9,33 +9,30 @@ export default async function ProfilePage() {
   const userId = cookieStore.get('session_userid')?.value;
   if (!userId) return null;
 
-  const rawUser = await prisma.user.findUnique({ 
+  const rawUser = await prisma.user.findUnique({
     where: { id: userId },
     include: {
       tasks: {
         orderBy: { createdAt: 'desc' }
-      }
+      },
+      linkedGoogleAccount: true
     }
   });
-  
+
   if (!rawUser) return null;
 
   const user = {
     ...rawUser,
-    hourlyRate: rawUser.hourlyRate.toNumber() 
+    hourlyRate: rawUser.hourlyRate.toNumber()
   };
 
-  // Check for pending email verification
-  const pendingToken = await prisma.emailVerificationToken.findFirst({
-    where: {
-      userId,
-      expiresAt: { gt: new Date() }
-    },
-    orderBy: { createdAt: 'desc' }
-  });
-
-  const pendingEmailVerification = pendingToken 
-    ? { pendingEmail: pendingToken.newEmail } 
+  const linkedGoogle = rawUser.linkedGoogleAccount
+    ? {
+        email: rawUser.linkedGoogleAccount.email,
+        name: rawUser.linkedGoogleAccount.name,
+        picture: rawUser.linkedGoogleAccount.picture,
+        linkedAt: rawUser.linkedGoogleAccount.linkedAt.toISOString()
+      }
     : null;
 
   return (
@@ -55,12 +52,12 @@ export default async function ProfilePage() {
           </div>
         </div>
 
-        <ProfileView 
-          user={user} 
-          tasks={user.tasks} 
-          pendingEmailVerification={pendingEmailVerification}
+        <ProfileView
+          user={user}
+          tasks={user.tasks}
+          linkedGoogle={linkedGoogle}
         />
       </div>
     </EmployeeLayout>
   );
-} 
+}

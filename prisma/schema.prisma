@@ -72,8 +72,8 @@ model User {
   scheduleRequests ScheduleChangeRequest[]
   tasks         Task[] 
   
-  // NEW: Email Verification Tokens
-  emailVerificationTokens EmailVerificationToken[]
+  // Linked Google Account
+  linkedGoogleAccount LinkedGoogleAccount?
 }
 
 model Attendance {
@@ -149,13 +149,17 @@ model ScheduleChangeRequest {
   updatedAt        DateTime @updatedAt
 }
 
-// NEW: Email Verification Token Model
-model EmailVerificationToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  newEmail  String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+// Linked Google Account for employees
+model LinkedGoogleAccount {
+  id            String   @id @default(cuid())
+
+  googleId      String   @unique
+  email         String
+  name          String?
+  picture       String?
+
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  linkedAt      DateTime @default(now())
 }

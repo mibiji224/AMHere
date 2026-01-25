@@ -2,38 +2,45 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { User, Mail, Phone, Clock, Calendar, CheckCircle, Circle, Edit2, Save, X, Briefcase, ChevronDown, AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
-import { updateProfile, requestScheduleChange, toggleTask, cancelEmailVerification, resendVerificationEmail } from './actions';
+import { User, Mail, Phone, Clock, Calendar, CheckCircle, Circle, Edit2, Save, X, Briefcase, ChevronDown, AlertCircle, Loader2, Link2, Unlink } from 'lucide-react';
+import { updateProfile, requestScheduleChange, toggleTask, unlinkGoogleAccount } from './actions';
+
+interface LinkedGoogle {
+  email: string;
+  name: string | null;
+  picture: string | null;
+  linkedAt: string;
+}
 
 interface ProfileViewProps {
   user: any;
   tasks: any[];
-  pendingEmailVerification: { pendingEmail: string } | null;
+  linkedGoogle: LinkedGoogle | null;
 }
 
-export default function ProfileView({ user, tasks, pendingEmailVerification }: ProfileViewProps) {
+export default function ProfileView({ user, tasks, linkedGoogle }: ProfileViewProps) {
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState('schedule'); 
+  const [activeTab, setActiveTab] = useState('schedule');
   const [isEditing, setIsEditing] = useState(false);
   const [isRequestingTime, setIsRequestingTime] = useState(false);
   const [requestType, setRequestType] = useState<'days' | 'time'>('days');
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUnlinking, setIsUnlinking] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
-  const [isResending, setIsResending] = useState(false);
 
   useEffect(() => {
     const success = searchParams.get('success');
     const error = searchParams.get('error');
 
-    if (success === 'email_verified') {
-      setMessage({ type: 'success', text: 'Your email has been verified and updated successfully!' });
-    } else if (error === 'invalid_token') {
-      setMessage({ type: 'error', text: 'Invalid verification link. Please request a new one.' });
-    } else if (error === 'token_expired') {
-      setMessage({ type: 'error', text: 'Verification link has expired. Please request a new one.' });
-    } else if (error === 'email_taken') {
-      setMessage({ type: 'error', text: 'This email is now taken by another account.' });
+    if (success === 'google_linked') {
+      setMessage({ type: 'success', text: 'Google account linked successfully!' });
+    } else if (error === 'google_auth_cancelled') {
+      setMessage({ type: 'info', text: 'Google account linking was cancelled.' });
+    } else if (error === 'google_already_linked') {
+      setMessage({ type: 'error', text: 'This Google account is already linked to another user.' });
+    } else if (error === 'link_failed') {
+      setMessage({ type: 'error', text: 'Failed to link Google account. Please try again.' });
     }
 
     if (success || error) {
@@ -48,12 +55,9 @@ export default function ProfileView({ user, tasks, pendingEmailVerification }: P
 
     try {
       const result = await updateProfile(formData);
-      
+
       if (result?.error) {
         setMessage({ type: 'error', text: result.error });
-      } else if (result?.emailPending) {
-        setMessage({ type: 'info', text: result.message || 'Verification email sent!' });
-        setIsEditing(false);
       } else {
         setMessage({ type: 'success', text: 'Profile updated successfully!' });
         setIsEditing(false);
@@ -65,28 +69,21 @@ export default function ProfileView({ user, tasks, pendingEmailVerification }: P
     }
   };
 
-  const handleResendVerification = async () => {
-    setIsResending(true);
+  const handleUnlinkGoogle = async () => {
+    if (!confirm('Are you sure you want to unlink your Google account?')) return;
+
+    setIsUnlinking(true);
     try {
-      const result = await resendVerificationEmail(user.id);
+      const result = await unlinkGoogleAccount(user.id);
       if (result.error) {
         setMessage({ type: 'error', text: result.error });
       } else {
-        setMessage({ type: 'success', text: 'Verification email resent!' });
+        setMessage({ type: 'success', text: 'Google account unlinked.' });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to resend email' });
+      setMessage({ type: 'error', text: 'Failed to unlink account' });
     } finally {
-      setIsResending(false);
-    }
-  };
-
-  const handleCancelVerification = async () => {
-    try {
-      await cancelEmailVerification(user.id);
-      setMessage({ type: 'info', text: 'Email change cancelled.' });
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to cancel' });
+      setIsUnlinking(false);
     }
   };
 
@@ -101,22 +98,22 @@ export default function ProfileView({ user, tasks, pendingEmailVerification }: P
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-      
+
       {/* SIDEBAR NAVIGATION */}
       <div className="lg:col-span-1 space-y-2">
-        <button 
+        <button
           onClick={() => setActiveTab('details')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'details' ? 'bg-blue-600 text-white shadow-md' : 'bg-card hover:bg-secondary text-muted-foreground'}`}
         >
           <User size={18} /> Personal Details
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('schedule')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'schedule' ? 'bg-blue-600 text-white shadow-md' : 'bg-card hover:bg-secondary text-muted-foreground'}`}
         >
           <Clock size={18} /> Schedule & Shift
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('tasks')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'tasks' ? 'bg-blue-600 text-white shadow-md' : 'bg-card hover:bg-secondary text-muted-foreground'}`}
         >
@@ -126,7 +123,7 @@ export default function ProfileView({ user, tasks, pendingEmailVerification }: P
 
       {/* MAIN CONTENT AREA */}
       <div className="lg:col-span-3 bg-card border border-border rounded-2xl p-8 shadow-sm min-h-[500px]">
-        
+
         {/* Global Message Toast */}
         {message && (
           <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300 ${
@@ -152,7 +149,7 @@ export default function ProfileView({ user, tasks, pendingEmailVerification }: P
                 <h2 className="text-2xl font-black">Personal Details</h2>
                 <p className="text-muted-foreground">Manage your contact information.</p>
               </div>
-              <button 
+              <button
                 onClick={() => setIsEditing(!isEditing)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-colors ${isEditing ? 'bg-secondary text-foreground' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
               >
@@ -160,44 +157,67 @@ export default function ProfileView({ user, tasks, pendingEmailVerification }: P
               </button>
             </div>
 
-            {/* Pending Email Verification Banner */}
-            {pendingEmailVerification && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                <div className="flex items-start gap-3">
-                  <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-                    <Mail className="text-amber-600" size={20} />
+            {/* Linked Google Account Section */}
+            <div className="bg-gradient-to-r from-slate-50 to-slate-100 border border-slate-200 rounded-xl p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm overflow-hidden">
+                    {linkedGoogle?.picture ? (
+                      <img src={linkedGoogle.picture} alt="Google" className="w-full h-full object-cover" />
+                    ) : (
+                      <svg className="w-6 h-6" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                      </svg>
+                    )}
                   </div>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-amber-800">Email Verification Pending</h4>
-                    <p className="text-sm text-amber-700 mt-1">
-                      We sent a verification link to <strong>{pendingEmailVerification.pendingEmail}</strong>. 
-                      Please check your inbox and click the link to confirm.
-                    </p>
-                    <div className="flex gap-2 mt-3">
-                      <button 
-                        onClick={handleResendVerification}
-                        disabled={isResending}
-                        className="flex items-center gap-1.5 text-xs font-bold text-amber-700 hover:text-amber-900 disabled:opacity-50"
-                      >
-                        {isResending ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                        Resend Email
-                      </button>
-                      <span className="text-amber-300">|</span>
-                      <button 
-                        onClick={handleCancelVerification}
-                        className="text-xs font-bold text-amber-700 hover:text-amber-900"
-                      >
-                        Cancel Change
-                      </button>
-                    </div>
+                  <div>
+                    <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                      Google Account
+                      {linkedGoogle && (
+                        <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold uppercase">
+                          Linked
+                        </span>
+                      )}
+                    </h4>
+                    {linkedGoogle ? (
+                      <p className="text-sm text-slate-600">{linkedGoogle.email}</p>
+                    ) : (
+                      <p className="text-sm text-slate-500">No Google account linked</p>
+                    )}
                   </div>
                 </div>
+
+                {linkedGoogle ? (
+                  <button
+                    onClick={handleUnlinkGoogle}
+                    disabled={isUnlinking}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-red-300 hover:text-red-600 transition-colors disabled:opacity-50"
+                  >
+                    {isUnlinking ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Unlink size={16} />
+                    )}
+                    Unlink
+                  </button>
+                ) : (
+                  <a
+                    href={`/api/link-google?userId=${user.id}`}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-white border border-slate-300 text-slate-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 transition-colors"
+                  >
+                    <Link2 size={16} />
+                    Link Google Account
+                  </a>
+                )}
               </div>
-            )}
+            </div>
 
             <form action={handleProfileSubmit} className="space-y-6">
               <input type="hidden" name="userId" value={user.id} />
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-muted-foreground">First Name</label>
@@ -208,51 +228,38 @@ export default function ProfileView({ user, tasks, pendingEmailVerification }: P
                   <input disabled value={user.lastName} className="w-full p-3 bg-secondary/50 rounded-xl font-bold opacity-70 cursor-not-allowed" />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
                   <Mail size={16}/> Email Address
-                  {pendingEmailVerification && (
-                    <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold uppercase">
-                      Pending Verification
-                    </span>
-                  )}
                 </label>
-                <input 
-                  name="email" 
+                <input
                   type="email"
-                  defaultValue={user.email} 
-                  disabled={!isEditing || !!pendingEmailVerification} 
-                  className={`w-full p-3 rounded-xl font-medium transition-all ${
-                    isEditing && !pendingEmailVerification 
-                      ? 'bg-background border-2 border-blue-600' 
-                      : 'bg-secondary/50 border-transparent'
-                  }`} 
+                  value={user.email}
+                  disabled
+                  className="w-full p-3 bg-secondary/50 rounded-xl font-medium opacity-70 cursor-not-allowed"
                 />
-                {isEditing && !pendingEmailVerification && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                    <AlertCircle size={12} />
-                    Changing your email will require verification.
-                  </p>
-                )}
+                <p className="text-xs text-muted-foreground">
+                  Email is managed by your administrator.
+                </p>
               </div>
-              
+
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
                   <Phone size={16}/> Contact Number
                 </label>
-                <input 
-                  name="contactNumber" 
-                  defaultValue={user.contactNumber || ''} 
-                  disabled={!isEditing} 
+                <input
+                  name="contactNumber"
+                  defaultValue={user.contactNumber || ''}
+                  disabled={!isEditing}
                   placeholder="e.g. +63 912 345 6789"
-                  className={`w-full p-3 rounded-xl font-medium transition-all ${isEditing ? 'bg-background border-2 border-blue-600' : 'bg-secondary/50 border-transparent'}`} 
+                  className={`w-full p-3 rounded-xl font-medium transition-all ${isEditing ? 'bg-background border-2 border-blue-600' : 'bg-secondary/50 border-transparent'}`}
                 />
               </div>
-              
+
               {isEditing && (
                 <div className="pt-4 flex justify-end">
-                  <button 
+                  <button
                     type="submit"
                     disabled={isSubmitting}
                     className="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg"
@@ -283,7 +290,7 @@ export default function ProfileView({ user, tasks, pendingEmailVerification }: P
                 <h2 className="text-2xl font-black">My Schedule</h2>
                 <p className="text-muted-foreground">Your assigned work hours and break times.</p>
               </div>
-              <button 
+              <button
                 onClick={() => {
                    setIsRequestingTime(!isRequestingTime);
                    setRequestType('days');
@@ -296,7 +303,7 @@ export default function ProfileView({ user, tasks, pendingEmailVerification }: P
 
             {!isRequestingTime ? (
               <div className="flex flex-col gap-4">
-                
+
                 <div className="bg-blue-50/50 border border-blue-100 p-5 rounded-2xl flex flex-col md:flex-row items-center gap-5 shadow-sm">
                    <div className="flex items-center gap-3 w-full md:w-36 shrink-0">
                       <div className="h-10 w-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shadow-sm">
@@ -372,7 +379,7 @@ export default function ProfileView({ user, tasks, pendingEmailVerification }: P
                        {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((day, i) => (
                          <div key={day} className="flex flex-col gap-1">
                            <span className="text-[10px] font-bold text-center text-muted-foreground uppercase">{day}</span>
-                           <div className="relative"><select name={`day-${i}`} className="w-full appearance-none p-2 pl-2 pr-6 bg-secondary/30 border border-border rounded-lg text-xs font-bold text-foreground focus:ring-2 focus:ring-blue-600 focus:outline-none cursor-pointer hover:border-blue-400 transition-colors text-center"><option value="">-</option><option value="ONSITE">🟢 On</option><option value="REMOTE">🟣 Rem</option><option value="OFF">🔴 Off</option></select><ChevronDown className="absolute right-1 top-2.5 text-muted-foreground pointer-events-none opacity-50" size={12} /></div>
+                           <div className="relative"><select name={`day-${i}`} className="w-full appearance-none p-2 pl-2 pr-6 bg-secondary/30 border border-border rounded-lg text-xs font-bold text-foreground focus:ring-2 focus:ring-blue-600 focus:outline-none cursor-pointer hover:border-blue-400 transition-colors text-center"><option value="">-</option><option value="ONSITE">On</option><option value="REMOTE">Rem</option><option value="OFF">Off</option></select><ChevronDown className="absolute right-1 top-2.5 text-muted-foreground pointer-events-none opacity-50" size={12} /></div>
                          </div>
                        ))}
                     </div>
