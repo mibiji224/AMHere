@@ -2,24 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
 import { OAuth2Client } from 'google-auth-library';
 
-const client = new OAuth2Client(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  process.env.NEXT_PUBLIC_APP_URL + '/api/link-google/callback'
-);
-
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get('code');
   const state = request.nextUrl.searchParams.get('state'); // userId
   const error = request.nextUrl.searchParams.get('error');
 
   if (error) {
+    console.log('Google auth error:', error);
     return NextResponse.redirect(new URL('/portal/profile?error=google_auth_cancelled', request.url));
   }
 
   if (!code || !state) {
     return NextResponse.redirect(new URL('/portal/profile?error=invalid_callback', request.url));
   }
+
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+  const client = new OAuth2Client(clientId, clientSecret, `${baseUrl}/api/link-google/callback`);
 
   try {
     // Exchange code for tokens

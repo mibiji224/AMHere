@@ -1,21 +1,36 @@
 // app/admin/login/page.tsx
 'use client'
 
-import { loginAdmin } from '@/app/login/action'; 
-import ThemeToggle from '@/app/components/ThemeToggle'; 
+import { loginAdmin } from '@/app/login/actions';
+import ThemeToggle from '@/app/components/ThemeToggle';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useFormStatus } from 'react-dom';
 
 function AdminLoginForm() {
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const { pending } = useFormStatus();
+  const [isPending, setIsPending] = useState(false);
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     setError(null);
-    const result = await loginAdmin(formData);
-    if (result?.error) {
-      setError(result.error);
+    setIsPending(true);
+
+    try {
+      const formData = new FormData(e.currentTarget);
+      const result = await loginAdmin(formData);
+
+      if (result.error) {
+        setError(result.error);
+        setIsPending(false);
+      } else if (result.success && result.redirectTo) {
+        router.push(result.redirectTo);
+      }
+    } catch (err) {
+      console.error('Admin login error:', err);
+      setError('An unexpected error occurred. Please try again.');
+      setIsPending(false);
     }
   }
 
@@ -32,38 +47,38 @@ function AdminLoginForm() {
           </div>
         </div>
       )}
-      <form action={handleSubmit} className="space-y-4">
-        
+      <form onSubmit={handleSubmit} className="space-y-4">
+
         <div className="space-y-1">
           <label className="text-xs font-bold text-muted-foreground uppercase">Email Address</label>
-          <input 
-            name="email" 
-            type="email" 
-            placeholder="admin@company.com" 
-            required 
-            disabled={pending}
+          <input
+            name="email"
+            type="email"
+            placeholder="admin@company.com"
+            required
+            disabled={isPending}
             className="w-full bg-background border border-input rounded-lg p-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-purple-500 transition disabled:opacity-60 disabled:cursor-not-allowed"
           />
         </div>
 
         <div className="space-y-1">
           <label className="text-xs font-bold text-muted-foreground uppercase">Password</label>
-          <input 
-            name="password" 
-            type="password" 
-            placeholder="••••••••" 
-            required 
-            disabled={pending}
+          <input
+            name="password"
+            type="password"
+            placeholder="••••••••"
+            required
+            disabled={isPending}
             className="w-full bg-background border border-input rounded-lg p-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-purple-500 transition disabled:opacity-60 disabled:cursor-not-allowed"
           />
         </div>
 
-        <button 
+        <button
           type="submit"
-          disabled={pending}
+          disabled={isPending}
           className="w-full bg-foreground text-background hover:bg-foreground/90 disabled:opacity-70 disabled:cursor-not-allowed font-bold py-3 rounded-lg shadow-sm transition active:scale-95"
         >
-          {pending ? 'Logging in...' : 'Dashboard Login'}
+          {isPending ? 'Logging in...' : 'Dashboard Login'}
         </button>
 
       </form>

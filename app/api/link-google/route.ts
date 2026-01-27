@@ -1,12 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/app/lib/prisma';
 import { OAuth2Client } from 'google-auth-library';
-
-const client = new OAuth2Client(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  process.env.NEXT_PUBLIC_APP_URL + '/api/link-google/callback'
-);
 
 // GET: Redirect to Google OAuth
 export async function GET(request: NextRequest) {
@@ -16,10 +9,21 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/portal/profile?error=missing_user', request.url));
   }
 
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+  if (!clientId || !clientSecret || clientId === 'your_google_client_id_here') {
+    console.error('Google OAuth credentials not configured');
+    return NextResponse.redirect(new URL('/portal/profile?error=oauth_not_configured', request.url));
+  }
+
+  const client = new OAuth2Client(clientId, clientSecret, `${baseUrl}/api/link-google/callback`);
+
   const authUrl = client.generateAuthUrl({
     access_type: 'offline',
     scope: ['openid', 'email', 'profile'],
-    state: userId, // Pass userId in state to use in callback
+    state: userId,
     prompt: 'select_account',
   });
 

@@ -41,6 +41,8 @@ export default function ProfileView({ user, tasks, linkedGoogle }: ProfileViewPr
       setMessage({ type: 'error', text: 'This Google account is already linked to another user.' });
     } else if (error === 'link_failed') {
       setMessage({ type: 'error', text: 'Failed to link Google account. Please try again.' });
+    } else if (error === 'oauth_not_configured') {
+      setMessage({ type: 'error', text: 'Google OAuth is not configured. Please contact your administrator.' });
     }
 
     if (success || error) {

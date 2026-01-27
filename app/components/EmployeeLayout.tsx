@@ -12,7 +12,7 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { logout } from '@/app/login/action';
+import { logout } from '@/app/login/actions';
 import ThemeToggle from './ThemeToggle';
 
 export default function EmployeeLayout({ children }: { children: React.ReactNode }) {
@@ -89,7 +89,7 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
           </button>
         </header>
 
-        <div className="p-4 lg:p-8 max-w-5xl mx-auto w-full flex-1">
+        <div className="p-2 lg:p-4 max-w-5xl mx-auto w-full flex-1">
           {children}
         </div>
       </main>
