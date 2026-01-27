@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import EmployeeLayout from '@/app/components/EmployeeLayout';
 import { ClockInButton, ClockOutButton, toggleBreak } from './actions';
 import { Coffee, TrendingUp, CalendarDays, MapPin, History, ArrowRight } from 'lucide-react';
+import LiveClock from './LiveClock';
 
 export const dynamic = 'force-dynamic';
 
@@ -92,19 +93,12 @@ export default async function EmployeePortal() {
             <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent opacity-30 pointer-events-none" />
 
             {/* TOP: Time Display */}
-            <div className="flex flex-col space-y-1 relative z-10 pb-6">
-              <h1 className="text-3xl md:text-4xl font-black text-foreground tracking-tighter drop-shadow-sm select-none">
-                {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </h1>
-              <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px]">
-                {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
-              </p>
-            </div>
+            <LiveClock />
 
-            {/* MIDDLE: Avatar & Status - RESTRUCTURED FOR SPACING */}
+            {/* MIDDLE: Avatar & Status */}
             <div className="flex flex-col items-center gap-6 relative z-10 pb-6 pt-2">
                
-               {/* Avatar Container (Isolated from text for better pulse effect) */}
+               {/* Avatar Container */}
                <div className="relative group/avatar">
                  <div className={`w-24 h-24 rounded-full flex items-center justify-center border-[4px] shadow-xl overflow-hidden transition-all duration-500 relative z-10 ${
                     isOnBreak ? 'border-orange-400 bg-orange-50/80 shadow-[0_0_15px_rgba(251,146,60,0.6)]' :
@@ -123,15 +117,18 @@ export default async function EmployeePortal() {
                      )}
                 </div>
                 
-                {/* Pulse Ring */}
+                {/* --- PULSE ANIMATION --- 
+                   UPDATED: Changed to '-inset-1' for a tighter radius. 
+                   It will barely extend beyond the avatar border.
+                */}
                 {(isClockedIn || isOnBreak) && (
-                  <span className={`absolute inset-0 rounded-full animate-ping opacity-50 duration-1000 ${
+                  <span className={`absolute inset-2 rounded-full animate-pulse opacity-40 ${
                     isOnBreak ? 'bg-orange-500' : 'bg-blue-600'
                   }`} />
                 )}
                </div>
 
-               {/* Status Pill - Moved here with its own spacing */}
+               {/* Status Pill */}
                {(isClockedIn || isOnBreak || isClockedOut) && (
                  <div className={`px-4 py-1.5 rounded-full font-bold text-[10px] uppercase tracking-wider shadow-md border border-white/20 backdrop-blur-md ${
                    isOnBreak ? 'bg-orange-500/90 text-white' :
@@ -198,7 +195,7 @@ export default async function EmployeePortal() {
 
         {/* === RIGHT COLUMN: STANDARD GLASS CARDS === */}
         <div className="flex flex-col gap-5 h-full">
-          {/* ... (Right column remains unchanged) ... */}
+          
           {/* 1. WEEKLY PROGRESS */}
           <div className={glassCardClasses}>
             <div className="flex items-center gap-3 mb-4">
@@ -207,10 +204,12 @@ export default async function EmployeePortal() {
               </div>
               <h3 className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Weekly Goal</h3>
             </div>
+            
             <div className="flex items-end gap-2 mb-3">
               <span className="text-4xl font-black tracking-tight text-foreground">{totalHoursThisWeek.toFixed(1)}</span>
               <span className="text-muted-foreground font-bold mb-1 text-xs">/ 40 hrs</span>
             </div>
+            
             <div className="w-full bg-black/5 dark:bg-white/5 h-3 rounded-full overflow-hidden p-[2px]">
               <div 
                 className="bg-green-500 h-full rounded-full transition-all duration-1000 relative" 
@@ -227,6 +226,7 @@ export default async function EmployeePortal() {
               </div>
               <h3 className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Today's Schedule</h3>
             </div>
+            
             <div className="space-y-4">
               <div className="flex justify-between items-center pb-3 border-b border-black/5 dark:border-white/5">
                 <span className="text-xs font-bold text-muted-foreground">Start Time</span>
@@ -259,11 +259,13 @@ export default async function EmployeePortal() {
                 </div>
                 <ArrowRight size={16} className="text-muted-foreground/50 hover:text-purple-500 transition-colors cursor-pointer" />
              </div>
+
              <div className="flex-1 space-y-2">
                 {recentLogs.length > 0 ? recentLogs.map((log) => {
                   const hours = log.timeOut && log.timeIn 
                     ? ((log.timeOut.getTime() - log.timeIn.getTime()) / (1000 * 60 * 60)).toFixed(1)
                     : '0';
+                  
                   return (
                     <div key={log.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-white/40 dark:hover:bg-white/5 transition-all border border-transparent hover:border-white/20 group cursor-default">
                        <div className="flex flex-col">

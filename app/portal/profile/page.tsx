@@ -37,7 +37,8 @@ export default async function ProfilePage() {
 
   return (
     <EmployeeLayout>
-      <div className="max-w-6xl mx-auto space-y-8">
+      {/* UPDATED: Added pt-24 here to force space at the top */}
+      <div className="max-w-6xl mx-auto space-y-8 pt-15 px-6 pb-12">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 overflow-hidden">
              {user.photoUrl ? (

@@ -15,7 +15,7 @@ export default function ScheduleRequestSection({ requests, userEmail }: { reques
       {/* HEADER SECTION */}
       <div className="flex justify-between items-end border-b border-border pb-4">
         <div>
-          <h2 className="text-2xl font-black tracking-tight">Schedule Requests</h2>
+          <h2 className="text-2xl font-black tracking-tight text-foreground">Schedule Requests</h2>
           <p className="text-muted-foreground">Manage your shift preferences.</p>
         </div>
         <button 
@@ -41,7 +41,12 @@ export default function ScheduleRequestSection({ requests, userEmail }: { reques
              }`} />
 
              <div className="flex items-start gap-5 flex-1">
-               <div className={`p-4 rounded-2xl shrink-0 ${req.requestedStart ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}>
+               {/* Icon Background - Adapted for Dark Mode */}
+               <div className={`p-4 rounded-2xl shrink-0 ${
+                 req.requestedStart 
+                   ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' 
+                   : 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400'
+               }`}>
                   {req.requestedStart ? <Clock size={24}/> : <Calendar size={24}/>}
                </div>
                
@@ -51,9 +56,9 @@ export default function ScheduleRequestSection({ requests, userEmail }: { reques
                       {req.requestedStart ? 'Shift Time Update' : 'Work Days Adjustment'}
                     </h4>
                     <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
-                       req.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
-                       req.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                       'bg-yellow-100 text-yellow-700'
+                       req.status === 'APPROVED' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                       req.status === 'REJECTED' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                       'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
                     }`}>
                       {req.status}
                     </span>
@@ -98,10 +103,10 @@ export default function ScheduleRequestSection({ requests, userEmail }: { reques
             
             <div className="p-5 border-b border-border flex justify-between items-center bg-secondary/30">
               <div>
-                <h3 className="font-black text-lg">New Request</h3>
+                <h3 className="font-black text-lg text-foreground">New Request</h3>
                 <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wide">Submit to Admin</p>
               </div>
-              <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-white rounded-full transition-colors border border-transparent hover:border-border"><X size={18}/></button>
+              <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-secondary rounded-full transition-colors border border-transparent hover:border-border text-foreground"><X size={18}/></button>
             </div>
             
             <form action={async (formData) => {
@@ -110,19 +115,27 @@ export default function ScheduleRequestSection({ requests, userEmail }: { reques
             }} className="p-6 space-y-6 overflow-y-auto">
               <input type="hidden" name="userEmail" value={userEmail} />
 
-              {/* --- NEW: TABS TO SELECT REQUEST TYPE --- */}
+              {/* --- TABS TO SELECT REQUEST TYPE --- */}
               <div className="flex p-1 bg-secondary/50 rounded-xl">
                 <button 
                   type="button"
                   onClick={() => setRequestType('days')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${requestType === 'days' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                    requestType === 'days' 
+                      ? 'bg-background text-foreground shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
                 >
                   <Calendar size={16} /> Change Work Days
                 </button>
                 <button 
                   type="button"
                   onClick={() => setRequestType('time')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${requestType === 'time' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                    requestType === 'time' 
+                      ? 'bg-background text-foreground shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
                 >
                   <Clock size={16} /> Change Shift Times
                 </button>
@@ -130,7 +143,7 @@ export default function ScheduleRequestSection({ requests, userEmail }: { reques
               
               {/* CONDITIONAL INPUTS BASED ON TAB */}
               {requestType === 'days' ? (
-                /* --- OPTION 1: CHANGE WORK DAYS (Existing Grid) --- */
+                /* --- OPTION 1: CHANGE WORK DAYS (Clean Text) --- */
                 <div className="space-y-3 animate-in fade-in duration-300">
                   <label className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
                     Proposed Daily Schedule
@@ -156,7 +169,7 @@ export default function ScheduleRequestSection({ requests, userEmail }: { reques
                   </div>
                 </div>
               ) : (
-                /* --- OPTION 2: CHANGE SHIFT TIMES (New Inputs) --- */
+                /* --- OPTION 2: CHANGE SHIFT TIMES (iOS Style Time Picker) --- */
                 <div className="space-y-3 animate-in fade-in duration-300">
                   <label className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
                     Proposed New Shift Times
@@ -167,8 +180,8 @@ export default function ScheduleRequestSection({ requests, userEmail }: { reques
                       <input 
                         type="time" 
                         name="startTime" 
-                        required={requestType === 'time'} // Only required if this tab is active
-                        className="w-full p-3 bg-card border border-border rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-600"
+                        required={requestType === 'time'}
+                        className="w-full p-4 rounded-xl bg-gray-100 dark:bg-secondary/20 border-none text-center font-bold text-lg text-blue-600 dark:text-blue-400 focus:ring-0 transition-all cursor-pointer appearance-none"
                       />
                     </div>
                     <div className="space-y-1">
@@ -176,8 +189,8 @@ export default function ScheduleRequestSection({ requests, userEmail }: { reques
                       <input 
                         type="time" 
                         name="endTime" 
-                        required={requestType === 'time'} // Only required if this tab is active
-                        className="w-full p-3 bg-card border border-border rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-600"
+                        required={requestType === 'time'}
+                        className="w-full p-4 rounded-xl bg-gray-100 dark:bg-secondary/20 border-none text-center font-bold text-lg text-blue-600 dark:text-blue-400 focus:ring-0 transition-all cursor-pointer appearance-none"
                       />
                     </div>
                   </div>
@@ -193,7 +206,7 @@ export default function ScheduleRequestSection({ requests, userEmail }: { reques
                   name="reason" 
                   required 
                   placeholder={requestType === 'days' ? "e.g. I have classes on Monday mornings..." : "e.g. Need to shift hours for childcare..."}
-                  className="w-full p-3 bg-secondary/30 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 min-h-[80px] resize-none" 
+                  className="w-full p-3 bg-secondary/30 border border-border rounded-xl text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-600 min-h-[80px] resize-none" 
                 />
               </div>
 

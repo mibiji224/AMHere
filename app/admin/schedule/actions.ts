@@ -3,6 +3,50 @@
 import { prisma } from '@/app/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
+export async function saveAllSchedules(formData: FormData) {
+  const entries = Array.from(formData.entries());
+
+  // Group by userId
+  const schedulesByUser: Record<string, { dayOfWeek: number; workType: string }[]> = {};
+
+  for (const [key, value] of entries) {
+    if (key.includes(':::')) {
+      const [userId, dayIndex] = key.split(':::');
+      const workType = value as string;
+
+      if (!schedulesByUser[userId]) {
+        schedulesByUser[userId] = [];
+      }
+
+      if (workType !== 'REST') {
+        schedulesByUser[userId].push({
+          dayOfWeek: parseInt(dayIndex),
+          workType: workType
+        });
+      }
+    }
+  }
+
+  // Update schedules for each user
+  for (const [userId, schedules] of Object.entries(schedulesByUser)) {
+    // Delete existing schedules
+    await prisma.schedule.deleteMany({ where: { userId } });
+
+    // Create new schedules
+    if (schedules.length > 0) {
+      await prisma.schedule.createMany({
+        data: schedules.map(s => ({
+          userId,
+          dayOfWeek: s.dayOfWeek,
+          workType: s.workType as 'ONSITE' | 'REMOTE'
+        }))
+      });
+    }
+  }
+
+  revalidatePath('/admin/schedule');
+}
+
 export async function approveScheduleChange(formData: FormData) {
   const requestId = formData.get('requestId') as string;
 

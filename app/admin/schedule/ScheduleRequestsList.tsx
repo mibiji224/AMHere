@@ -1,6 +1,6 @@
 'use client'
 
-import { approveRequest, rejectRequest } from './actions';
+import { approveScheduleChange, rejectScheduleChange } from './actions';
 
 type ScheduleRequest = {
   id: string;
@@ -88,13 +88,15 @@ export default function ScheduleRequestsList({ requests }: { requests: ScheduleR
 
               {/* ACTION BUTTONS */}
               <div className="flex gap-2 pt-2">
-                <form action={async () => await approveRequest(req.id)} className="flex-1">
+                <form action={approveScheduleChange} className="flex-1">
+                  <input type="hidden" name="requestId" value={req.id} />
                   <button className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 rounded-lg shadow-sm transition">
                     ✓ Approve Change
                   </button>
                 </form>
-                
-                <form action={async () => await rejectRequest(req.id)} className="flex-1">
+
+                <form action={rejectScheduleChange} className="flex-1">
+                  <input type="hidden" name="requestId" value={req.id} />
                   <button className="w-full bg-secondary hover:bg-red-50 hover:text-red-600 hover:border-red-200 border border-transparent text-muted-foreground text-xs font-bold py-2.5 rounded-lg transition">
                     ✕ Reject
                   </button>

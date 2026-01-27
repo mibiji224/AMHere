@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useTheme } from './ThemeProvider';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { logout } from '../login/action';
+import { logout } from '../login/actions';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

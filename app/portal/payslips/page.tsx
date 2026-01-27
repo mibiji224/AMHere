@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 // ---------------------------------------------------------
 // 🔧 CONFIGURATION
 // ---------------------------------------------------------
-const USD_TO_PHP_RATE = 58.50; // Change this to your preferred rate
+const USD_TO_PHP_RATE = 58.50; 
 
 export default async function PayslipsPage() {
   const cookieStore = await cookies();
@@ -93,27 +93,30 @@ export default async function PayslipsPage() {
 
   return (
     <EmployeeLayout>
-      <div className="space-y-8">
+      <div className="space-y-8 pt-15">
         <div>
-          <h1 className="text-3xl font-black tracking-tight">My Payslips</h1>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">My Payslips</h1>
           <p className="text-muted-foreground">View and print your weekly salary details.</p>
         </div>
 
         {/* Payslip Card */}
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
-          <div>
-            <h3 className="font-bold text-lg">Current Week: {payslipData.period}</h3>
+          
+          {/* LEFT SIDE: Info Only */}
+          <div className="flex flex-col gap-1 items-start">
+            <h3 className="font-bold text-lg text-foreground">Current Week: {payslipData.period}</h3>
             <p className="text-muted-foreground text-sm">
-              Status: <span className="text-green-600 font-bold">Accumulating</span>
+              Status: <span className="text-green-600 dark:text-green-400 font-bold">Accumulating</span>
             </p>
           </div>
           
+          {/* RIGHT SIDE: Earnings + Print Button */}
           <div className="flex items-center gap-6">
             <div className="text-right">
               <p className="text-xs text-muted-foreground font-bold uppercase mb-1">Estimated Net Pay</p>
               
-              {/* PRIMARY CURRENCY (USD) */}
-              <div className="font-black text-4xl text-green-600 leading-none">
+              {/* PRIMARY CURRENCY (USD) - ADAPTED FOR DARK MODE */}
+              <div className="font-black text-4xl text-green-600 dark:text-green-400 leading-none">
                 ${payslipData.grossPayUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
               
@@ -126,19 +129,22 @@ export default async function PayslipsPage() {
                 Based on {totalHours.toFixed(2)} hrs work ($1 = ₱{USD_TO_PHP_RATE})
               </p>
             </div>
-            
-            <PrintButton />
+
+            {/* BUTTON PLACED HERE ON THE RIGHT */}
+            <div className="border-l border-border pl-6">
+               <PrintButton />
+            </div>
           </div>
         </div>
 
-        {/* History Table Preview */}
-        <div className="bg-secondary/30 rounded-xl p-6">
+        {/* History Table Preview - ADAPTED BACKGROUND */}
+        <div className="bg-secondary/30 dark:bg-secondary/10 rounded-xl p-6 border border-transparent dark:border-border">
           <h4 className="font-bold text-sm mb-4 uppercase text-muted-foreground">Breakdown</h4>
           <div className="space-y-2">
             {history.length > 0 ? history.map((day) => (
-              <div key={day.id} className="flex justify-between text-sm py-2 border-b border-border last:border-0">
+              <div key={day.id} className="flex justify-between text-sm py-2 border-b border-border last:border-0 text-foreground">
                 <span>{new Date(day.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
-                <span className="font-mono">{day.dailyHours.toFixed(2)} hrs</span>
+                <span className="font-mono text-foreground">{day.dailyHours.toFixed(2)} hrs</span>
               </div>
             )) : (
               <p className="text-sm text-muted-foreground italic">No completed shifts recorded for this week yet.</p>
@@ -151,7 +157,7 @@ export default async function PayslipsPage() {
           <PayslipTemplate 
             employee={employeeData} 
             totalHours={payslipData.totalHours}
-            totalEarnings={payslipData.grossPayUSD} // Passing USD to print template
+            totalEarnings={payslipData.grossPayUSD} 
             history={payslipData.history}
           />
         </div>
@@ -159,4 +165,4 @@ export default async function PayslipsPage() {
       </div>
     </EmployeeLayout>
   );
-}   
+}

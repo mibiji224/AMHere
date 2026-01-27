@@ -15,7 +15,7 @@ export default async function RecordsPage() {
 
   return (
     <EmployeeLayout>
-      <div className="space-y-8">
+      <div className="space-y-8 pt-15">
         <div>
           <h1 className="text-3xl font-black tracking-tight">My Records</h1>
           <p className="text-muted-foreground">Your attendance history for the last 30 days.</p>
